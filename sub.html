@@ -21,6 +21,7 @@
         th:nth-child(3) { width: 28%; } 
         th:nth-child(4), th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 11%; } 
         
+        .count-cell { color: #d32f2f; font-weight: bold; font-size: 15px; background-color: #fff; }
         .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
         .check-cell:hover { background-color: #e3f2fd; }
         
@@ -40,7 +41,15 @@
     <table>
         <thead>
             <tr>
-                <th>마을</th><th>직분</th><th>이름</th>
+                <th rowspan="2">마을</th>
+                <th rowspan="2">직분</th>
+                <th rowspan="2">이름</th>
+                <th class="count-cell" id="count-wed">0</th>
+                <th class="count-cell" id="count-fri">0</th>
+                <th class="count-cell" id="count-sun">0</th>
+                <th class="count-cell" id="count-vil">0</th>
+            </tr>
+            <tr>
                 <th>수요</th><th>금요</th><th>주일</th><th>마을</th>
             </tr>
         </thead>
@@ -78,6 +87,98 @@
     function init() {
         onValue(ref(db, 'members'), (snap) => {
             let loadedMembers = snap.val() || [];
+            members = loadedMembers.sort((a, b) => {
+                let aIndex = villageOrder.indexOf(a.village);
+                let bIndex = villageOrder.indexOf(b.village);
+                if (aIndex === -1) aIndex = 99;
+                if (bIndex === -1) bIndex = 99;
+                return aIndex - bIndex;
+            });
+            renderTable();
+        });
+        loadData();
+    }
+
+    function loadData() {
+        const dateStr = dateInput.value;
+        onValue(ref(db, `attendance/${dateStr}`), (snap) => {
+            attendanceData = snap.val() || {};
+            renderTable();
+        });
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        
+        let wedCount = 0, friCount = 0, sunCount = 0, vilCount = 0;
+
+        members.forEach((m, idx) => {
+            if(!m) return;
+            const checks = attendanceData[idx] || {};
+            
+            if(checks.wed) wedCount++;
+            if(checks.fri) friCount++;
+            if(checks.sun) sunCount++;
+            if(checks.vil) vilCount++;
+
+            const tr = document.createElement('tr');
+            const isLastInVillage = (idx === members.length - 1) || (members[idx+1].village !== m.village);
+            if(isLastInVillage) tr.classList.add('village-divider');
+            
+            let displayName = m.name;
+            if (displayName.includes('(') && !displayName.includes('<br>')) {
+                displayName = displayName.replace('(', '<br>(');
+            }
+            
+            tr.innerHTML = `
+                <td>${m.village}</td><td>${m.role}</td><td>${displayName}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        document.getElementById('count-wed').innerText = wedCount;
+        document.getElementById('count-fri').innerText = friCount;
+        document.getElementById('count-sun').innerText = sunCount;
+        document.getElementById('count-vil').innerText = vilCount;
+    }
+
+    window.toggleCheck = (idx, day) => {
+        const dateStr = dateInput.value;
+        const current = attendanceData[idx]?.[day] || false;
+        const nextState = !current;
+        set(ref(db, `attendance/${dateStr}/${idx}/${day}`), nextState);
+        
+        // 스마트폰 소리 재생 마법 코드
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            if(nextState) { 
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+            } else { 
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            }
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.1);
+        } catch(e) {}
+    };
+
+    init();
+</script>
+</body>
+</html>
             
             members = loadedMembers.sort((a, b) => {
                 let aIndex = villageOrder.indexOf(a.village);
