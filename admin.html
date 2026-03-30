@@ -190,7 +190,7 @@
 
     window.deleteMember = (idx) => {
         const cleanName = members[idx].name.replace('<br>', '');
-        if(confirm(`[${cleanName}] 성도님을 명단에서 삭제하시겠습니까?`)) {
+        if(confirm(`[${cleanName}] 님을 명단에서 삭제하시겠습니까?`)) {
             members.splice(idx, 1);
             const newMembers = members.filter(m => m !== null && m !== undefined);
             set(ref(db, 'members'), newMembers);
@@ -200,7 +200,7 @@
     document.getElementById('addBtn').addEventListener('click', () => {
         const v = prompt("마을 이름을 입력하세요 (예: 만배)");
         const r = prompt("직분을 입력하세요 (없으면 빈칸)");
-        const n = prompt("이름을 입력하세요 (예: 홍길동(가족))");
+        const n = prompt("이름을 입력하세요 (예: 홍길동)");
         if(v && n) {
             members.push({ village: v, role: r, name: n });
             set(ref(db, 'members'), members);
