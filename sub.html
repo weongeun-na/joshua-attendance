@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -34,7 +35,7 @@
 <div class="container">
     <div class="notice">터치하면 출석이 체크되며, 모든 관리자에게 실시간 공유됩니다.</div>
     <div class="header">
-        <div class="header-title">2026년 여호수아 목장 출석부 (관리자)</div>
+        <div class="header-title">2026년 여호수아 목장 출석부 (목자용)</div>
         <div><input type="date" class="date-input" id="currentDate"></div>
     </div>
 
@@ -84,6 +85,7 @@
 
     const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
 
+    // 🔊 소리 찌꺼기 청소 기능이 추가된 완벽한 소리 재생기
     let audioCtx;
     function playSound(isCheck) {
         try {
@@ -103,14 +105,18 @@
             
             osc.start(audioCtx.currentTime);
             osc.stop(audioCtx.currentTime + 0.1);
+            
+            // 10번 울리고 멈추는 에러 방지용 청소 코드
+            setTimeout(() => {
+                osc.disconnect();
+                gain.disconnect();
+            }, 200);
         } catch(e) {}
     }
 
     function init() {
         onValue(ref(db, 'members'), (snap) => {
             let loadedMembers = snap.val() || [];
-            
-            // 🚨 투명 인간(에러 데이터) 걸러내는 거름망
             loadedMembers = loadedMembers.filter(m => m !== null && m !== undefined);
             
             members = loadedMembers.sort((a, b) => {
@@ -178,211 +184,7 @@
         const current = attendanceData[idx]?.[day] || false;
         const nextState = !current;
         set(ref(db, `attendance/${dateStr}/${idx}/${day}`), nextState);
-        playSound(nextState); // 무한 소리 재생 마법 발동
-    };
-
-    init();
-</script>
-</body>
-</html>
-        <div class="header-title">2026년 여호수아 목장 출석부 (관리자)</div>
-        <div><input type="date" class="date-input" id="currentDate"></div>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th rowspan="2">마을</th>
-                <th rowspan="2">직분</th>
-                <th rowspan="2">이름</th>
-                <th class="count-cell" id="count-wed">0</th>
-                <th class="count-cell" id="count-fri">0</th>
-                <th class="count-cell" id="count-sun">0</th>
-                <th class="count-cell" id="count-vil">0</th>
-            </tr>
-            <tr>
-                <th>수요</th><th>금요</th><th>주일</th><th>마을</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-            </tbody>
-    </table>
-</div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyAaKWXfo-m5gSkZWt9Y5msG_mdCOqurgDA",
-        authDomain: "joshua-attendance-39be2.firebaseapp.com",
-        projectId: "joshua-attendance-39be2",
-        storageBucket: "joshua-attendance-39be2.firebasestorage.app",
-        messagingSenderId: "300709168343",
-        appId: "1:300709168343:4d662811b2282adb75c92",
-        databaseURL: "https://joshua-attendance-39be2-default-rtdb.firebaseio.com"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    let members = [];
-    let attendanceData = {};
-    const dateInput = document.getElementById('currentDate');
-    
-    dateInput.valueAsDate = new Date();
-    dateInput.addEventListener('change', loadData);
-
-    const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
-
-    function init() {
-        onValue(ref(db, 'members'), (snap) => {
-            let loadedMembers = snap.val() || [];
-            members = loadedMembers.sort((a, b) => {
-                let aIndex = villageOrder.indexOf(a.village);
-                let bIndex = villageOrder.indexOf(b.village);
-                if (aIndex === -1) aIndex = 99;
-                if (bIndex === -1) bIndex = 99;
-                return aIndex - bIndex;
-            });
-            renderTable();
-        });
-        loadData();
-    }
-
-    function loadData() {
-        const dateStr = dateInput.value;
-        onValue(ref(db, `attendance/${dateStr}`), (snap) => {
-            attendanceData = snap.val() || {};
-            renderTable();
-        });
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        
-        let wedCount = 0, friCount = 0, sunCount = 0, vilCount = 0;
-
-        members.forEach((m, idx) => {
-            if(!m) return;
-            const checks = attendanceData[idx] || {};
-            
-            if(checks.wed) wedCount++;
-            if(checks.fri) friCount++;
-            if(checks.sun) sunCount++;
-            if(checks.vil) vilCount++;
-
-            const tr = document.createElement('tr');
-            const isLastInVillage = (idx === members.length - 1) || (members[idx+1].village !== m.village);
-            if(isLastInVillage) tr.classList.add('village-divider');
-            
-            let displayName = m.name;
-            if (displayName.includes('(') && !displayName.includes('<br>')) {
-                displayName = displayName.replace('(', '<br>(');
-            }
-            
-            tr.innerHTML = `
-                <td>${m.village}</td><td>${m.role}</td><td>${displayName}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-        
-        document.getElementById('count-wed').innerText = wedCount;
-        document.getElementById('count-fri').innerText = friCount;
-        document.getElementById('count-sun').innerText = sunCount;
-        document.getElementById('count-vil').innerText = vilCount;
-    }
-
-    window.toggleCheck = (idx, day) => {
-        const dateStr = dateInput.value;
-        const current = attendanceData[idx]?.[day] || false;
-        const nextState = !current;
-        set(ref(db, `attendance/${dateStr}/${idx}/${day}`), nextState);
-        
-        // 스마트폰 소리 재생 마법 코드
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.type = 'sine';
-            if(nextState) { 
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
-            } else { 
-                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-            }
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            
-            osc.start(audioCtx.currentTime);
-            osc.stop(audioCtx.currentTime + 0.1);
-        } catch(e) {}
-    };
-
-    init();
-</script>
-</body>
-</html>
-            
-            members = loadedMembers.sort((a, b) => {
-                let aIndex = villageOrder.indexOf(a.village);
-                let bIndex = villageOrder.indexOf(b.village);
-                if (aIndex === -1) aIndex = 99;
-                if (bIndex === -1) bIndex = 99;
-                return aIndex - bIndex;
-            });
-            renderTable();
-        });
-        loadData();
-    }
-
-    function loadData() {
-        const dateStr = dateInput.value;
-        onValue(ref(db, `attendance/${dateStr}`), (snap) => {
-            attendanceData = snap.val() || {};
-            renderTable();
-        });
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        members.forEach((m, idx) => {
-            if(!m) return;
-            const checks = attendanceData[idx] || {};
-            const tr = document.createElement('tr');
-            
-            const isLastInVillage = (idx === members.length - 1) || (members[idx+1].village !== m.village);
-            if(isLastInVillage) tr.classList.add('village-divider');
-            
-            // 이름에 괄호가 있으면 자동으로 줄바꿈 처리
-            let displayName = m.name;
-            if (displayName.includes('(') && !displayName.includes('<br>')) {
-                displayName = displayName.replace('(', '<br>(');
-            }
-            
-            tr.innerHTML = `
-                <td>${m.village}</td><td>${m.role}</td><td>${displayName}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    window.toggleCheck = (idx, day) => {
-        const dateStr = dateInput.value;
-        const current = attendanceData[idx]?.[day] || false;
-        set(ref(db, `attendance/${dateStr}/${idx}/${day}`), !current);
+        playSound(nextState);
     };
 
     init();
