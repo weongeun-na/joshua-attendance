@@ -3,10 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <title>2026년 여호수아 목장 출석부 (관리자)</title>
     
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛪️</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛪️</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%23800000%22 d=%22M15 45L50 15L85 45V90H15V45Z M45 45V28H55V45H45Z M45 70V80H55V70H45Z%22/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%23800000%22 d=%22M15 45L50 15L85 45V90H15V45Z M45 45V28H55V45H45Z M45 70V80H55V70H45Z%22/></svg>">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -190,7 +195,7 @@
 
     window.deleteMember = (idx) => {
         const cleanName = members[idx].name.replace('<br>', '');
-        if(confirm(`[${cleanName}] 님을 명단에서 삭제하시겠습니까?`)) {
+        if(confirm(`[${cleanName}] 성도님을 명단에서 삭제하시겠습니까?`)) {
             members.splice(idx, 1);
             const newMembers = members.filter(m => m !== null && m !== undefined);
             set(ref(db, 'members'), newMembers);
@@ -200,7 +205,7 @@
     document.getElementById('addBtn').addEventListener('click', () => {
         const v = prompt("마을 이름을 입력하세요 (예: 만배)");
         const r = prompt("직분을 입력하세요 (없으면 빈칸)");
-        const n = prompt("이름을 입력하세요 (예: 홍길동)");
+        const n = prompt("이름을 입력하세요 (예: 홍길동(가족))");
         if(v && n) {
             members.push({ village: v, role: r, name: n });
             set(ref(db, 'members'), members);
