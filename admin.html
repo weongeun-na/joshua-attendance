@@ -4,35 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2026년 여호수아 목장 출석부 (관리자)</title>
+    
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛪️</text></svg>">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛪️</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛪️</text></svg>">
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; margin: 10px; background-color: #f4f4f9; }
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        
         .header { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px solid #333; padding: 15px 5px; margin-bottom: 15px; text-align: center; }
         .header-title { font-size: 18px; font-weight: bold; }
         .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; text-align: center; }
-        
         table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
         th, td { border: 1px solid #333; padding: 8px 2px; font-size: 12px; }
         th { background-color: #fff8e1; word-break: keep-all; }
-        
         th:nth-child(1) { width: 12%; } 
         th:nth-child(2) { width: 12%; } 
         th:nth-child(3) { width: 22%; } 
         th:nth-child(4), th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 10%; } 
         th:nth-child(8) { width: 14%; } 
-        
         .count-cell { color: #d32f2f; font-weight: bold; font-size: 15px; background-color: #fff; }
         .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
         .check-cell:hover { background-color: #e3f2fd; }
-        
         .village-divider { border-bottom: 2px solid #000; }
-        
         .admin-btn { padding: 8px 15px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; color: white; font-weight: bold; }
         .btn-img { background-color: #4CAF50; }
         .btn-pdf { background-color: #d32f2f; }
@@ -102,32 +98,22 @@
 
     const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
 
-    // 🔊 소리 찌꺼기 청소 기능이 추가된 완벽한 소리 재생기
     let audioCtx;
     function playSound(isCheck) {
         try {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            
             osc.type = 'sine';
             osc.frequency.setValueAtTime(isCheck ? 880 : 440, audioCtx.currentTime);
-            
             gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            
             osc.start(audioCtx.currentTime);
             osc.stop(audioCtx.currentTime + 0.1);
-            
-            // 10번 울리고 멈추는 에러 방지용 청소 코드
-            setTimeout(() => {
-                osc.disconnect();
-                gain.disconnect();
-            }, 200);
+            setTimeout(() => { osc.disconnect(); gain.disconnect(); }, 200);
         } catch(e) {}
     }
 
@@ -135,16 +121,6 @@
         onValue(ref(db, 'members'), (snap) => {
             let loadedMembers = snap.val() || [];
             loadedMembers = loadedMembers.filter(m => m !== null && m !== undefined);
-            
-            let needsFix = false;
-            loadedMembers.forEach(m => {
-                if (m.village === '반배') {
-                    m.village = '만배';
-                    needsFix = true;
-                }
-            });
-            if (needsFix) set(ref(db, 'members'), loadedMembers);
-
             members = loadedMembers.sort((a, b) => {
                 let aIndex = villageOrder.indexOf(a.village);
                 let bIndex = villageOrder.indexOf(b.village);
@@ -168,13 +144,11 @@
     function renderTable() {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
-        
         let wedCount = 0, friCount = 0, sunCount = 0, vilCount = 0;
 
         members.forEach((m, idx) => {
             if(!m) return;
             const checks = attendanceData[idx] || {};
-            
             if(checks.wed) wedCount++;
             if(checks.fri) friCount++;
             if(checks.sun) sunCount++;
@@ -238,27 +212,24 @@
         elems.forEach(el => el.style.display = hide ? 'none' : '');
     }
 
-    // 📸 저장할 때 '(관리자)' 글자 숨기는 마법 코드
     document.getElementById('imgBtn').addEventListener('click', () => {
         hideAdminUI(true);
         const titleEl = document.getElementById('mainTitle');
-        titleEl.innerText = '2026년 여호수아 목장 출석부'; // 캡처 전 이름 변경
-        
+        titleEl.innerText = '2026년 여호수아 목장 출석부';
         html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
             const link = document.createElement('a');
             link.download = `출석부_${dateInput.value}.png`;
             link.href = canvas.toDataURL();
             link.click();
             hideAdminUI(false);
-            titleEl.innerText = '2026년 여호수아 목장 출석부 (관리자)'; // 캡처 후 원래대로
+            titleEl.innerText = '2026년 여호수아 목장 출석부 (관리자)';
         });
     });
 
     document.getElementById('pdfBtn').addEventListener('click', () => {
         hideAdminUI(true);
         const titleEl = document.getElementById('mainTitle');
-        titleEl.innerText = '2026년 여호수아 목장 출석부'; // 캡처 전 이름 변경
-        
+        titleEl.innerText = '2026년 여호수아 목장 출석부';
         html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
@@ -266,7 +237,7 @@
             pdf.addImage(imgData, 'PNG', 0, 10, 210, imgHeight);
             pdf.save(`출석부_${dateInput.value}.pdf`);
             hideAdminUI(false);
-            titleEl.innerText = '2026년 여호수아 목장 출석부 (관리자)'; // 캡처 후 원래대로
+            titleEl.innerText = '2026년 여호수아 목장 출석부 (관리자)';
         });
     });
 
