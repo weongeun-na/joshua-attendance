@@ -11,27 +11,23 @@
         body { font-family: 'Malgun Gothic', sans-serif; margin: 10px; background-color: #f4f4f9; }
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         
-        /* 메인 타이틀 정렬 */
         .header { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px solid #333; padding: 15px 5px; margin-bottom: 15px; text-align: center; }
         .header-title { font-size: 18px; font-weight: bold; }
         .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; text-align: center; }
         
-        /* 표 너비 및 정렬 세밀 조정 */
         table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
         th, td { border: 1px solid #333; padding: 8px 2px; font-size: 12px; }
         th { background-color: #fff8e1; word-break: keep-all; }
         
-        /* 각 열(칸) 비율 조정 (이름칸을 충분히 넓게) */
-        th:nth-child(1) { width: 12%; } /* 마을 */
-        th:nth-child(2) { width: 12%; } /* 직분 */
-        th:nth-child(3) { width: 22%; } /* 이름 */
-        th:nth-child(4), th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 10%; } /* 출석 O 칸 */
-        th:nth-child(8) { width: 14%; } /* 관리(삭제) 칸 */
+        th:nth-child(1) { width: 12%; } 
+        th:nth-child(2) { width: 12%; } 
+        th:nth-child(3) { width: 22%; } 
+        th:nth-child(4), th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 10%; } 
+        th:nth-child(8) { width: 14%; } 
         
         .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
         .check-cell:hover { background-color: #e3f2fd; }
         
-        /* 마을 구분용 굵은 선 (아랫줄) */
         .village-divider { border-bottom: 2px solid #000; }
         
         .admin-btn { padding: 8px 15px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; color: white; font-weight: bold; }
@@ -45,8 +41,8 @@
 <body>
 
 <div style="text-align: center; margin-bottom: 10px;">
-    <button class="admin-btn btn-img" onclick="saveAsImage()">🖼️ 이미지 저장</button>
-    <button class="admin-btn btn-pdf" onclick="saveAsPDF()">📄 PDF 저장</button>
+    <button class="admin-btn btn-img" id="imgBtn">🖼️ 이미지 저장</button>
+    <button class="admin-btn btn-pdf" id="pdfBtn">📄 PDF 저장</button>
 </div>
 
 <div class="container" id="capture-area">
@@ -66,14 +62,13 @@
         <tbody id="tableBody">
             </tbody>
     </table>
-    <button class="admin-btn btn-add hide-on-print" id="addBtn" onclick="addMember()">+ 새 인원 추가</button>
+    <button class="admin-btn btn-add hide-on-print" id="addBtn">+ 새 인원 추가</button>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // 완성된 파이어베이스 열쇠 코드
     const firebaseConfig = {
         apiKey: "AIzaSyAaKWXfo-m5gSkZWt9Y5msG_mdCOqurgDA",
         authDomain: "joshua-attendance-39be2.firebaseapp.com",
@@ -94,29 +89,28 @@
     dateInput.valueAsDate = new Date();
     dateInput.addEventListener('change', loadData);
 
-    // 이름 수정 및 마을(만배) 수정 반영된 명단 (마을 순서 고정용 배열)
     const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
-    const rawData = `열매	목자	정경채(박현정)\n열매		임충열(이영숙)\n열매		권성현(백수정)\n열매		최병일(허미영)\n열매		황주상(이진형)\n열매		이주원(임지혜)\n열매		김귀송(권정아)\n열매		정대범(오서윤)\n열매		조상기(김혜연)\n열매		신재환\n믿음	목자	김영일(정정인)\n믿음	순장	배주석<br>(김 경)\n믿음		최갑수(고현진)\n믿음		곽웅비(김수진)\n믿음		조예닮(주예슬)\n소망	목자	이경훈(박연희)\n소망		이동일(신순자)\n소망		정용균(문미정)\n소망		최민호(박미순)\n소망		김영도(진보람)\n소망		방용지(주현영)\n소망		이동섭\n축복	목자	김동원(김미라)\n축복		김환모(김혜영)\n축복		이성철\n축복		박영곤\n온유	목자	조승구(박금이)\n온유		이도현(윤미영)\n온유		문종호(조혜숙)\n온유		오태현<br>(김 민)\n온유		박인호(김미경)\n온유		김경석(박정미)\n만배	목자	나원근(이혜련)\n만배		조봉현(이윤희)\n만배		최 욱<br>(김혜정)\n만배		안영섭(윤숙자)\n만배		정우진(박선아)\n생명수	목자	임수열(김윤경)\n생명수	순장	이성진(고윤정)\n생명수		김병헌(임혜선)\n생명수		임알렉산더\n생명수		전홍석(강호연)\n생명수		김선웅\n생명수		조영환(이혜진)\n생명수		이재익\n생명수		김장기\n갈렙	목자	선종식(이정례)\n갈렙		김재봉(서금희)\n갈렙		정용국(손정림)\n약속	목자	황민우(고유은)\n약속	순장	고대봉(허태현)\n약속		김산웅(고경미)\n약속		이동혁(이재영)`;
 
     async function init() {
         const membersRef = ref(db, 'members');
-        const snapshot = await get(membersRef);
-        if (!snapshot.exists()) {
-            const initialMembers = rawData.split('\n').map(line => {
-                const [v, r, n] = line.split('\t');
-                return { village: v.trim(), role: r ? r.trim() : "", name: n.trim() };
-            });
-            await set(membersRef, initialMembers);
-        }
         
         onValue(membersRef, (snap) => {
             let loadedMembers = snap.val() || [];
+            let needsFix = false;
             
-            // 마을 순서대로 명단 강제 정렬 (새로 추가해도 자기 마을로 찾아감)
+            // 파이어베이스에 잘못 저장된 '반배'를 '만배'로 자동 청소하는 마법 코드
+            loadedMembers.forEach(m => {
+                if (m.village === '반배') {
+                    m.village = '만배';
+                    needsFix = true;
+                }
+            });
+            if (needsFix) set(ref(db, 'members'), loadedMembers);
+
             members = loadedMembers.sort((a, b) => {
                 let aIndex = villageOrder.indexOf(a.village);
                 let bIndex = villageOrder.indexOf(b.village);
-                if (aIndex === -1) aIndex = 99; // 목록에 없는 마을은 맨 뒤로
+                if (aIndex === -1) aIndex = 99;
                 if (bIndex === -1) bIndex = 99;
                 return aIndex - bIndex;
             });
@@ -141,12 +135,17 @@
             const checks = attendanceData[idx] || {};
             const tr = document.createElement('tr');
             
-            // 다음 사람이 다른 마을이면 아랫줄을 굵게 칠하는 클래스 추가
             const isLastInVillage = (idx === members.length - 1) || (members[idx+1].village !== m.village);
             if(isLastInVillage) tr.classList.add('village-divider');
             
+            // 이름에 괄호가 있으면 자동으로 줄바꿈 처리
+            let displayName = m.name;
+            if (displayName.includes('(') && !displayName.includes('<br>')) {
+                displayName = displayName.replace('(', '<br>(');
+            }
+            
             tr.innerHTML = `
-                <td>${m.village}</td><td>${m.role}</td><td>${m.name}</td>
+                <td>${m.village}</td><td>${m.role}</td><td>${displayName}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
@@ -163,24 +162,7 @@
         set(ref(db, `attendance/${dateStr}/${idx}/${day}`), !current);
     };
 
-    window.addMember = () => {
-        const v = prompt("마을 이름을 입력하세요 (예: 만배)");
-        const r = prompt("직분을 입력하세요 (없으면 빈칸)");
-        let n = prompt("이름을 입력하세요 (예: 홍길동)");
-        
-        if(v && n) {
-            // 이름에 괄호가 있으면 강제로 두 줄로 나누기
-            if(n.includes("(")) {
-                 n = n.replace("(", "<br>(");
-            }
-            members.push({ village: v, role: r, name: n });
-            set(ref(db, 'members'), members);
-            // 정렬은 onValue에서 자동 처리됨
-        }
-    };
-
     window.deleteMember = (idx) => {
-        // 이름에 포함된 <br> 태그를 빼고 물어보기
         const cleanName = members[idx].name.replace('<br>', '');
         if(confirm(`[${cleanName}] 성도님을 명단에서 삭제하시겠습니까?`)) {
             members.splice(idx, 1);
@@ -188,12 +170,25 @@
         }
     };
 
+    // 새 인원 추가 버튼 오류 완벽 해결
+    document.getElementById('addBtn').addEventListener('click', () => {
+        const v = prompt("마을 이름을 입력하세요 (예: 만배)");
+        const r = prompt("직분을 입력하세요 (없으면 빈칸)");
+        const n = prompt("이름을 입력하세요 (예: 홍길동(가족))");
+        
+        if(v && n) {
+            members.push({ village: v, role: r, name: n });
+            set(ref(db, 'members'), members);
+        }
+    });
+
     function hideAdminUI(hide) {
         const elems = document.querySelectorAll('.hide-on-print');
         elems.forEach(el => el.style.display = hide ? 'none' : '');
     }
 
-    window.saveAsImage = () => {
+    // 이미지 및 PDF 저장 오류 완벽 해결
+    document.getElementById('imgBtn').addEventListener('click', () => {
         hideAdminUI(true);
         html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
             const link = document.createElement('a');
@@ -202,9 +197,9 @@
             link.click();
             hideAdminUI(false);
         });
-    };
+    });
 
-    window.saveAsPDF = () => {
+    document.getElementById('pdfBtn').addEventListener('click', () => {
         hideAdminUI(true);
         html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
@@ -214,7 +209,7 @@
             pdf.save(`출석부_${dateInput.value}.pdf`);
             hideAdminUI(false);
         });
-    };
+    });
 
     init();
 </script>
