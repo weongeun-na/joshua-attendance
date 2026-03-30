@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>출석부 (주관리자용)</title>
+    <title>출석부 (선교사용)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
@@ -141,7 +141,7 @@
     };
 
     window.deleteMember = (idx) => {
-        if(confirm(`[${members[idx].name}] 성도님을 명단에서 삭제하시겠습니까?`)) {
+        if(confirm(`[${members[idx].name}] 명단에서 삭제하시겠습니까?`)) {
             members.splice(idx, 1);
             set(ref(db, 'members'), members);
         }
