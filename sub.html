@@ -8,27 +8,23 @@
         body { font-family: 'Malgun Gothic', sans-serif; margin: 10px; background-color: #f4f4f9; }
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         
-        /* 메인 타이틀 관리자와 동일하게 변경 */
         .header { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px solid #333; padding: 15px 5px; margin-bottom: 15px; text-align: center; }
         .header-title { font-size: 18px; font-weight: bold; }
         .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; text-align: center; }
         
-        /* 표 너비 비율 관리자 화면과 동일하게 맞춤 (관리 버튼 칸 제외) */
         table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
         th, td { border: 1px solid #333; padding: 8px 2px; font-size: 12px; }
         th { background-color: #fff8e1; word-break: keep-all; }
         
-        th:nth-child(1) { width: 14%; } /* 마을 */
-        th:nth-child(2) { width: 14%; } /* 직분 */
-        th:nth-child(3) { width: 28%; } /* 이름 (가장 넓게) */
-        th:nth-child(4), th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 11%; } /* 출석 O 칸 */
+        th:nth-child(1) { width: 14%; } 
+        th:nth-child(2) { width: 14%; } 
+        th:nth-child(3) { width: 28%; } 
+        th:nth-child(4), th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 11%; } 
         
         .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
         .check-cell:hover { background-color: #e3f2fd; }
         
-        /* 마을 구분용 굵은 선 (아랫줄) */
         .village-divider { border-bottom: 2px solid #000; }
-        
         .notice { text-align: center; font-size: 12px; color: #666; margin-bottom: 10px; word-break: keep-all; }
     </style>
 </head>
@@ -37,7 +33,7 @@
 <div class="container">
     <div class="notice">터치하면 출석이 체크되며, 모든 관리자에게 실시간 공유됩니다.</div>
     <div class="header">
-        <div class="header-title">2026년 여호수아 목장 출석부 (목자용)</div>
+        <div class="header-title">2026년 여호수아 목장 출석부 (관리자)</div>
         <div><input type="date" class="date-input" id="currentDate"></div>
     </div>
 
@@ -57,7 +53,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // 완성된 파이어베이스 열쇠 코드
     const firebaseConfig = {
         apiKey: "AIzaSyAaKWXfo-m5gSkZWt9Y5msG_mdCOqurgDA",
         authDomain: "joshua-attendance-39be2.firebaseapp.com",
@@ -78,14 +73,12 @@
     dateInput.valueAsDate = new Date();
     dateInput.addEventListener('change', loadData);
 
-    // 정렬 규칙 (서브 페이지에서도 정렬 유지)
     const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
 
     function init() {
         onValue(ref(db, 'members'), (snap) => {
             let loadedMembers = snap.val() || [];
             
-            // 마을 순서대로 정렬
             members = loadedMembers.sort((a, b) => {
                 let aIndex = villageOrder.indexOf(a.village);
                 let bIndex = villageOrder.indexOf(b.village);
@@ -114,12 +107,17 @@
             const checks = attendanceData[idx] || {};
             const tr = document.createElement('tr');
             
-            // 다음 사람이 다른 마을이면 아랫줄을 굵게 칠하는 클래스 추가
             const isLastInVillage = (idx === members.length - 1) || (members[idx+1].village !== m.village);
             if(isLastInVillage) tr.classList.add('village-divider');
             
+            // 이름에 괄호가 있으면 자동으로 줄바꿈 처리
+            let displayName = m.name;
+            if (displayName.includes('(') && !displayName.includes('<br>')) {
+                displayName = displayName.replace('(', '<br>(');
+            }
+            
             tr.innerHTML = `
-                <td>${m.village}</td><td>${m.role}</td><td>${m.name}</td>
+                <td>${m.village}</td><td>${m.role}</td><td>${displayName}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
