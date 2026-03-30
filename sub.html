@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>출석부 (목자용)</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 10px; background-color: #f4f4f9; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border: 2px solid #333; padding: 10px; margin-bottom: 20px; font-size: 18px; font-weight: bold; }
+        .date-input { font-size: 16px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; }
+        table { width: 100%; border-collapse: collapse; text-align: center; }
+        th, td { border: 1px solid #333; padding: 8px 2px; font-size: 13px; }
+        th { background-color: #fff8e1; }
+        .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 18px; width: 40px; user-select: none; }
+        .check-cell:hover { background-color: #e3f2fd; }
+        .notice { text-align: center; font-size: 12px; color: #666; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="notice">터치하면 출석이 체크되며, 모든 관리자에게 실시간 공유됩니다.</div>
+    <div class="header">
+        <div>출석부 입력창</div>
+        <div><input type="date" class="date-input" id="currentDate"></div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>마을</th><th>직분</th><th>이름</th>
+                <th>수요</th><th>금요</th><th>주일</th><th>예배</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            </tbody>
+    </table>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // 완성된 파이어베이스 열쇠 코드
+    const firebaseConfig = {
+        apiKey: "AIzaSyAaKWXfo-m5gSkZWt9Y5msG_mdCOqurgDA",
+        authDomain: "joshua-attendance-39be2.firebaseapp.com",
+        projectId: "joshua-attendance-39be2",
+        storageBucket: "joshua-attendance-39be2.firebasestorage.app",
+        messagingSenderId: "300709168343",
+        appId: "1:300709168343:4d662811b2282adb75c92",
+        databaseURL: "https://joshua-attendance-39be2-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let members = [];
+    let attendanceData = {};
+    const dateInput = document.getElementById('currentDate');
+    
+    dateInput.valueAsDate = new Date();
+    dateInput.addEventListener('change', loadData);
+
+    function init() {
+        onValue(ref(db, 'members'), (snap) => {
+            members = snap.val() || [];
+            renderTable();
+        });
+        loadData();
+    }
+
+    function loadData() {
+        const dateStr = dateInput.value;
+        onValue(ref(db, `attendance/${dateStr}`), (snap) => {
+            attendanceData = snap.val() || {};
+            renderTable();
+        });
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        members.forEach((m, idx) => {
+            if(!m) return;
+            const checks = attendanceData[idx] || {};
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${m.village}</td><td>${m.role}</td><td>${m.name}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.toggleCheck = (idx, day) => {
+        const dateStr = dateInput.value;
+        const current = attendanceData[idx]?.[day] || false;
+        set(ref(db, `attendance/${dateStr}/${idx}/${day}`), !current);
+    };
+
+    init();
+</script>
+</body>
+</html>

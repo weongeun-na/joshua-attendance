@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>출석부 (주관리자용)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 10px; background-color: #f4f4f9; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border: 2px solid #333; padding: 10px 20px; margin-bottom: 20px; font-size: 22px; font-weight: bold; }
+        .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; }
+        table { width: 100%; border-collapse: collapse; text-align: center; }
+        th, td { border: 1px solid #333; padding: 6px 4px; font-size: 14px; }
+        th { background-color: #fff8e1; }
+        .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 18px; width: 40px; user-select: none; }
+        .check-cell:hover { background-color: #e3f2fd; }
+        .admin-btn { padding: 8px 15px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; color: white; font-weight: bold; }
+        .btn-img { background-color: #4CAF50; }
+        .btn-pdf { background-color: #d32f2f; }
+        .btn-add { background-color: #1976D2; width: 100%; margin-top: 10px; padding: 10px; }
+        .btn-del { background-color: #ff9800; padding: 2px 6px; font-size: 12px; cursor: pointer; }
+        .hide-on-print { display: table-cell; }
+    </style>
+</head>
+<body>
+
+<div style="text-align: center; margin-bottom: 10px;">
+    <button class="admin-btn btn-img" onclick="saveAsImage()">🖼️ 이미지 저장</button>
+    <button class="admin-btn btn-pdf" onclick="saveAsPDF()">📄 PDF 저장</button>
+</div>
+
+<div class="container" id="capture-area">
+    <div class="header">
+        <div>2026년 여호수아 목장 출석부 (관리자)</div>
+        <div><input type="date" class="date-input" id="currentDate"></div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>마을</th><th>직분</th><th>이름</th>
+                <th>수요</th><th>금요</th><th>주일</th><th>마을예배</th>
+                <th class="hide-on-print" id="action-header">관리</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            </tbody>
+    </table>
+    <button class="admin-btn btn-add hide-on-print" id="addBtn" onclick="addMember()">+ 새 인원 추가</button>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // 완성된 파이어베이스 열쇠 코드
+    const firebaseConfig = {
+        apiKey: "AIzaSyAaKWXfo-m5gSkZWt9Y5msG_mdCOqurgDA",
+        authDomain: "joshua-attendance-39be2.firebaseapp.com",
+        projectId: "joshua-attendance-39be2",
+        storageBucket: "joshua-attendance-39be2.firebasestorage.app",
+        messagingSenderId: "300709168343",
+        appId: "1:300709168343:4d662811b2282adb75c92",
+        databaseURL: "https://joshua-attendance-39be2-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let members = [];
+    let attendanceData = {};
+    const dateInput = document.getElementById('currentDate');
+    
+    dateInput.valueAsDate = new Date();
+    dateInput.addEventListener('change', loadData);
+
+    const rawData = `열매	목자	정경채(박현정)\n열매		임충열(이영숙)\n열매		권성현(백수정)\n열매		최병일(허미영)\n열매		황주상(이진형)\n열매		이주원(임지혜)\n열매		김귀송(권정아)\n열매		정대범(오서윤)\n열매		조상기(김혜연)\n열매		신재환\n믿음	목자	김영일(정정인)\n믿음	순장	배주석(김 경)\n믿음		최갑수(고현진)\n믿음		곽웅비(김수진)\n믿음		조예닮(주예슬)\n소망	목자	이경훈(박연희)\n소망		이동일(신순자)\n소망		정용균(문미정)\n소망		최민호(박미순)\n소망		김영도(진보람)\n소망		방용지(주현영)\n소망		이동섭\n축복	목자	김동원(김미라)\n축복		김환모(김혜영)\n축복		이성철\n축복		박영곤\n온유	목자	조승구(박금이)\n온유		이도현(윤미영)\n온유		문종호(조혜숙)\n온유		오태현(김 민)\n온유		박인호(김미경)\n온유		김경석(박정미)\n반배	목자	나원근(이혜련)\n반배		조봉현(이윤희)\n반배		최 욱(김혜정)\n반배		안영섭(윤숙자)\n반배		정우진(박선아)\n생명수	목자	임수열(김윤경)\n생명수	순장	이성진(고윤정)\n생명수		김병헌(임혜선)\n생명수		임알렉산더\n생명수		전홍석(강호연)\n생명수		김선웅\n생명수		조영환(이혜진)\n생명수		이재익\n생명수		김장기\n갈렙	목자	선종식(이정례)\n갈렙		김재봉(서금희)\n갈렙		정용국(손정림)\n약속	목자	황민우(고유은)\n약속	순장	고대봉(허태현)\n약속		김산웅(고경미)\n약속		이동혁(이재영)`;
+
+    async function init() {
+        const membersRef = ref(db, 'members');
+        const snapshot = await get(membersRef);
+        if (!snapshot.exists()) {
+            const initialMembers = rawData.split('\n').map(line => {
+                const [v, r, n] = line.split('\t');
+                return { village: v.trim(), role: r ? r.trim() : "", name: n.trim() };
+            });
+            await set(membersRef, initialMembers);
+        }
+        
+        onValue(membersRef, (snap) => {
+            members = snap.val() || [];
+            renderTable();
+        });
+        loadData();
+    }
+
+    function loadData() {
+        const dateStr = dateInput.value;
+        onValue(ref(db, `attendance/${dateStr}`), (snap) => {
+            attendanceData = snap.val() || {};
+            renderTable();
+        });
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        members.forEach((m, idx) => {
+            if(!m) return;
+            const checks = attendanceData[idx] || {};
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${m.village}</td><td>${m.role}</td><td>${m.name}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
+                <td class="hide-on-print"><button class="admin-btn btn-del" onclick="deleteMember(${idx})">삭제</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.toggleCheck = (idx, day) => {
+        const dateStr = dateInput.value;
+        const current = attendanceData[idx]?.[day] || false;
+        set(ref(db, `attendance/${dateStr}/${idx}/${day}`), !current);
+    };
+
+    window.addMember = () => {
+        const v = prompt("마을 이름을 입력하세요 (예: 열매)");
+        const r = prompt("직분을 입력하세요 (없으면 빈칸)");
+        const n = prompt("이름을 입력하세요 (예: 홍길동)");
+        if(v && n) {
+            members.push({ village: v, role: r, name: n });
+            set(ref(db, 'members'), members);
+        }
+    };
+
+    window.deleteMember = (idx) => {
+        if(confirm(`[${members[idx].name}] 성도님을 명단에서 삭제하시겠습니까?`)) {
+            members.splice(idx, 1);
+            set(ref(db, 'members'), members);
+        }
+    };
+
+    function hideAdminUI(hide) {
+        const elems = document.querySelectorAll('.hide-on-print');
+        elems.forEach(el => el.style.display = hide ? 'none' : '');
+    }
+
+    window.saveAsImage = () => {
+        hideAdminUI(true);
+        html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `출석부_${dateInput.value}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            hideAdminUI(false);
+        });
+    };
+
+    window.saveAsPDF = () => {
+        hideAdminUI(true);
+        html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+            const imgHeight = canvas.height * 210 / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 10, 210, imgHeight);
+            pdf.save(`출석부_${dateInput.value}.pdf`);
+            hideAdminUI(false);
+        });
+    };
+
+    init();
+</script>
+</body>
+</html>
