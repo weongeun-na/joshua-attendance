@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <title>2026년 여호수아 목장 출석부 (관리자)</title>
+    <title>2026년 여호수아 목장 출석부 </title>
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%23800000%22 d=%22M15 45L50 15L85 45V90H15V45Z M45 45V28H55V45H45Z M45 70V80H55V70H45Z%22/></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%23800000%22 d=%22M15 45L50 15L85 45V90H15V45Z M45 45V28H55V45H45Z M45 70V80H55V70H45Z%22/></svg>">
@@ -205,7 +205,7 @@
     document.getElementById('addBtn').addEventListener('click', () => {
         const v = prompt("마을 이름을 입력하세요 (예: 만배)");
         const r = prompt("직분을 입력하세요 (없으면 빈칸)");
-        const n = prompt("이름을 입력하세요 (예: 홍길동(가족))");
+        const n = prompt("이름을 입력하세요 (예: 홍길동)");
         if(v && n) {
             members.push({ village: v, role: r, name: n });
             set(ref(db, 'members'), members);
