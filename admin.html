@@ -48,7 +48,7 @@
 
 <div class="container" id="capture-area">
     <div class="header">
-        <div class="header-title">2026년 여호수아 목장 출석부 (관리자)</div>
+        <div class="header-title" id="mainTitle">2026년 여호수아 목장 출석부 (관리자)</div>
         <div><input type="date" class="date-input" id="currentDate"></div>
     </div>
 
@@ -100,7 +100,7 @@
 
     const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
 
-    // 소리 재생기 (단 하나만 만들어서 계속 씁니다)
+    // 🔊 소리 찌꺼기 청소 기능이 추가된 완벽한 소리 재생기
     let audioCtx;
     function playSound(isCheck) {
         try {
@@ -120,14 +120,18 @@
             
             osc.start(audioCtx.currentTime);
             osc.stop(audioCtx.currentTime + 0.1);
+            
+            // 10번 울리고 멈추는 에러 방지용 청소 코드
+            setTimeout(() => {
+                osc.disconnect();
+                gain.disconnect();
+            }, 200);
         } catch(e) {}
     }
 
     function init() {
         onValue(ref(db, 'members'), (snap) => {
             let loadedMembers = snap.val() || [];
-            
-            // 🚨 투명 인간(에러 데이터) 걸러내는 거름망
             loadedMembers = loadedMembers.filter(m => m !== null && m !== undefined);
             
             let needsFix = false;
@@ -205,14 +209,13 @@
         const current = attendanceData[idx]?.[day] || false;
         const nextState = !current;
         set(ref(db, `attendance/${dateStr}/${idx}/${day}`), nextState);
-        playSound(nextState); // 무한 소리 재생 마법 발동
+        playSound(nextState);
     };
 
     window.deleteMember = (idx) => {
         const cleanName = members[idx].name.replace('<br>', '');
         if(confirm(`[${cleanName}] 성도님을 명단에서 삭제하시겠습니까?`)) {
             members.splice(idx, 1);
-            // 삭제 시 배열 크기가 틀어지지 않게 깔끔하게 저장
             const newMembers = members.filter(m => m !== null && m !== undefined);
             set(ref(db, 'members'), newMembers);
         }
@@ -233,19 +236,27 @@
         elems.forEach(el => el.style.display = hide ? 'none' : '');
     }
 
+    // 📸 저장할 때 '(관리자)' 글자 숨기는 마법 코드
     document.getElementById('imgBtn').addEventListener('click', () => {
         hideAdminUI(true);
+        const titleEl = document.getElementById('mainTitle');
+        titleEl.innerText = '2026년 여호수아 목장 출석부'; // 캡처 전 이름 변경
+        
         html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
             const link = document.createElement('a');
             link.download = `출석부_${dateInput.value}.png`;
             link.href = canvas.toDataURL();
             link.click();
             hideAdminUI(false);
+            titleEl.innerText = '2026년 여호수아 목장 출석부 (관리자)'; // 캡처 후 원래대로
         });
     });
 
     document.getElementById('pdfBtn').addEventListener('click', () => {
         hideAdminUI(true);
+        const titleEl = document.getElementById('mainTitle');
+        titleEl.innerText = '2026년 여호수아 목장 출석부'; // 캡처 전 이름 변경
+        
         html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
@@ -253,332 +264,7 @@
             pdf.addImage(imgData, 'PNG', 0, 10, 210, imgHeight);
             pdf.save(`출석부_${dateInput.value}.pdf`);
             hideAdminUI(false);
-        });
-    });
-
-    init();
-</script>
-</body>
-</html>
-        .admin-btn { padding: 8px 15px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; color: white; font-weight: bold; }
-        .btn-img { background-color: #4CAF50; }
-        .btn-pdf { background-color: #d32f2f; }
-        .btn-add { background-color: #1976D2; width: 100%; margin-top: 10px; padding: 12px; font-size: 16px; }
-        .btn-del { background-color: #ff9800; padding: 4px 6px; font-size: 11px; cursor: pointer; }
-        .hide-on-print { display: table-cell; }
-    </style>
-</head>
-<body>
-
-<div style="text-align: center; margin-bottom: 10px;">
-    <button class="admin-btn btn-img" id="imgBtn">🖼️ 이미지 저장</button>
-    <button class="admin-btn btn-pdf" id="pdfBtn">📄 PDF 저장</button>
-</div>
-
-<div class="container" id="capture-area">
-    <div class="header">
-        <div class="header-title">2026년 여호수아 목장 출석부 (관리자)</div>
-        <div><input type="date" class="date-input" id="currentDate"></div>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th rowspan="2">마을</th>
-                <th rowspan="2">직분</th>
-                <th rowspan="2">이름</th>
-                <th class="count-cell" id="count-wed">0</th>
-                <th class="count-cell" id="count-fri">0</th>
-                <th class="count-cell" id="count-sun">0</th>
-                <th class="count-cell" id="count-vil">0</th>
-                <th rowspan="2" class="hide-on-print" id="action-header">관리</th>
-            </tr>
-            <tr>
-                <th>수요</th><th>금요</th><th>주일</th><th>마을</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-            </tbody>
-    </table>
-    <button class="admin-btn btn-add hide-on-print" id="addBtn">+ 새 인원 추가</button>
-</div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyAaKWXfo-m5gSkZWt9Y5msG_mdCOqurgDA",
-        authDomain: "joshua-attendance-39be2.firebaseapp.com",
-        projectId: "joshua-attendance-39be2",
-        storageBucket: "joshua-attendance-39be2.firebasestorage.app",
-        messagingSenderId: "300709168343",
-        appId: "1:300709168343:4d662811b2282adb75c92",
-        databaseURL: "https://joshua-attendance-39be2-default-rtdb.firebaseio.com"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    let members = [];
-    let attendanceData = {};
-    const dateInput = document.getElementById('currentDate');
-    
-    dateInput.valueAsDate = new Date();
-    dateInput.addEventListener('change', loadData);
-
-    const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
-
-    async function init() {
-        const membersRef = ref(db, 'members');
-        onValue(membersRef, (snap) => {
-            let loadedMembers = snap.val() || [];
-            members = loadedMembers.sort((a, b) => {
-                let aIndex = villageOrder.indexOf(a.village);
-                let bIndex = villageOrder.indexOf(b.village);
-                if (aIndex === -1) aIndex = 99;
-                if (bIndex === -1) bIndex = 99;
-                return aIndex - bIndex;
-            });
-            renderTable();
-        });
-        loadData();
-    }
-
-    function loadData() {
-        const dateStr = dateInput.value;
-        onValue(ref(db, `attendance/${dateStr}`), (snap) => {
-            attendanceData = snap.val() || {};
-            renderTable();
-        });
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        
-        let wedCount = 0, friCount = 0, sunCount = 0, vilCount = 0; // 합계 계산용 변수
-
-        members.forEach((m, idx) => {
-            if(!m) return;
-            const checks = attendanceData[idx] || {};
-            
-            // O 표시가 있으면 합계 숫자 1씩 증가
-            if(checks.wed) wedCount++;
-            if(checks.fri) friCount++;
-            if(checks.sun) sunCount++;
-            if(checks.vil) vilCount++;
-
-            const tr = document.createElement('tr');
-            const isLastInVillage = (idx === members.length - 1) || (members[idx+1].village !== m.village);
-            if(isLastInVillage) tr.classList.add('village-divider');
-            
-            let displayName = m.name;
-            if (displayName.includes('(') && !displayName.includes('<br>')) {
-                displayName = displayName.replace('(', '<br>(');
-            }
-            
-            tr.innerHTML = `
-                <td>${m.village}</td><td>${m.role}</td><td>${displayName}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
-                <td class="hide-on-print"><button class="admin-btn btn-del" onclick="deleteMember(${idx})">삭제</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
-        
-        // 화면 꼭대기에 계산된 합계 숫자 표시하기
-        document.getElementById('count-wed').innerText = wedCount;
-        document.getElementById('count-fri').innerText = friCount;
-        document.getElementById('count-sun').innerText = sunCount;
-        document.getElementById('count-vil').innerText = vilCount;
-    }
-
-    window.toggleCheck = (idx, day) => {
-        const dateStr = dateInput.value;
-        const current = attendanceData[idx]?.[day] || false;
-        const nextState = !current;
-        set(ref(db, `attendance/${dateStr}/${idx}/${day}`), nextState);
-        
-        // 스마트폰 소리 재생 마법 코드
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        .btn-del { background-color: #ff9800; padding: 4px 6px; font-size: 11px; cursor: pointer; }
-        .hide-on-print { display: table-cell; }
-    </style>
-</head>
-<body>
-
-<div style="text-align: center; margin-bottom: 10px;">
-    <button class="admin-btn btn-img" id="imgBtn">🖼️ 이미지 저장</button>
-    <button class="admin-btn btn-pdf" id="pdfBtn">📄 PDF 저장</button>
-</div>
-
-<div class="container" id="capture-area">
-    <div class="header">
-        <div class="header-title">2026년 여호수아 목장 출석부 (관리자)</div>
-        <div><input type="date" class="date-input" id="currentDate"></div>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>마을</th><th>직분</th><th>이름</th>
-                <th>수요</th><th>금요</th><th>주일</th><th>마을</th>
-                <th class="hide-on-print" id="action-header">관리</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-            </tbody>
-    </table>
-    <button class="admin-btn btn-add hide-on-print" id="addBtn">+ 새 인원 추가</button>
-</div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyAaKWXfo-m5gSkZWt9Y5msG_mdCOqurgDA",
-        authDomain: "joshua-attendance-39be2.firebaseapp.com",
-        projectId: "joshua-attendance-39be2",
-        storageBucket: "joshua-attendance-39be2.firebasestorage.app",
-        messagingSenderId: "300709168343",
-        appId: "1:300709168343:4d662811b2282adb75c92",
-        databaseURL: "https://joshua-attendance-39be2-default-rtdb.firebaseio.com"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    let members = [];
-    let attendanceData = {};
-    const dateInput = document.getElementById('currentDate');
-    
-    dateInput.valueAsDate = new Date();
-    dateInput.addEventListener('change', loadData);
-
-    const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
-
-    async function init() {
-        const membersRef = ref(db, 'members');
-        
-        onValue(membersRef, (snap) => {
-            let loadedMembers = snap.val() || [];
-            let needsFix = false;
-            
-            // 파이어베이스에 잘못 저장된 '반배'를 '만배'로 자동 청소하는 마법 코드
-            loadedMembers.forEach(m => {
-                if (m.village === '반배') {
-                    m.village = '만배';
-                    needsFix = true;
-                }
-            });
-            if (needsFix) set(ref(db, 'members'), loadedMembers);
-
-            members = loadedMembers.sort((a, b) => {
-                let aIndex = villageOrder.indexOf(a.village);
-                let bIndex = villageOrder.indexOf(b.village);
-                if (aIndex === -1) aIndex = 99;
-                if (bIndex === -1) bIndex = 99;
-                return aIndex - bIndex;
-            });
-            renderTable();
-        });
-        loadData();
-    }
-
-    function loadData() {
-        const dateStr = dateInput.value;
-        onValue(ref(db, `attendance/${dateStr}`), (snap) => {
-            attendanceData = snap.val() || {};
-            renderTable();
-        });
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        members.forEach((m, idx) => {
-            if(!m) return;
-            const checks = attendanceData[idx] || {};
-            const tr = document.createElement('tr');
-            
-            const isLastInVillage = (idx === members.length - 1) || (members[idx+1].village !== m.village);
-            if(isLastInVillage) tr.classList.add('village-divider');
-            
-            // 이름에 괄호가 있으면 자동으로 줄바꿈 처리
-            let displayName = m.name;
-            if (displayName.includes('(') && !displayName.includes('<br>')) {
-                displayName = displayName.replace('(', '<br>(');
-            }
-            
-            tr.innerHTML = `
-                <td>${m.village}</td><td>${m.role}</td><td>${displayName}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
-                <td class="hide-on-print"><button class="admin-btn btn-del" onclick="deleteMember(${idx})">삭제</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    window.toggleCheck = (idx, day) => {
-        const dateStr = dateInput.value;
-        const current = attendanceData[idx]?.[day] || false;
-        set(ref(db, `attendance/${dateStr}/${idx}/${day}`), !current);
-    };
-
-    window.deleteMember = (idx) => {
-        const cleanName = members[idx].name.replace('<br>', '');
-        if(confirm(`[${cleanName}] 성도님을 명단에서 삭제하시겠습니까?`)) {
-            members.splice(idx, 1);
-            set(ref(db, 'members'), members);
-        }
-    };
-
-    // 새 인원 추가 버튼 오류 완벽 해결
-    document.getElementById('addBtn').addEventListener('click', () => {
-        const v = prompt("마을 이름을 입력하세요 (예: 만배)");
-        const r = prompt("직분을 입력하세요 (없으면 빈칸)");
-        const n = prompt("이름을 입력하세요 (예: 홍길동(가족))");
-        
-        if(v && n) {
-            members.push({ village: v, role: r, name: n });
-            set(ref(db, 'members'), members);
-        }
-    });
-
-    function hideAdminUI(hide) {
-        const elems = document.querySelectorAll('.hide-on-print');
-        elems.forEach(el => el.style.display = hide ? 'none' : '');
-    }
-
-    // 이미지 및 PDF 저장 오류 완벽 해결
-    document.getElementById('imgBtn').addEventListener('click', () => {
-        hideAdminUI(true);
-        html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `출석부_${dateInput.value}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-            hideAdminUI(false);
-        });
-    });
-
-    document.getElementById('pdfBtn').addEventListener('click', () => {
-        hideAdminUI(true);
-        html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-            const imgHeight = canvas.height * 210 / canvas.width;
-            pdf.addImage(imgData, 'PNG', 0, 10, 210, imgHeight);
-            pdf.save(`출석부_${dateInput.value}.pdf`);
-            hideAdminUI(false);
+            titleEl.innerText = '2026년 여호수아 목장 출석부 (관리자)'; // 캡처 후 원래대로
         });
     });
 
