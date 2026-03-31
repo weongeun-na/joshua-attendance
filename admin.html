@@ -242,7 +242,7 @@
     document.getElementById('addBtn').addEventListener('click', () => {
         const v = prompt("마을 이름을 입력하세요 (예: 만배)");
         const r = prompt("직분을 입력하세요 (없으면 빈칸)");
-        const n = prompt("이름을 입력하세요 (예: 홍길동(가족))");
+        const n = prompt("이름을 입력하세요 (예: 홍길동)");
         if(v && n) {
             members.push({ village: v, role: r, name: n });
             set(ref(db, 'members'), members);
