@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <title>2026년 여호수아 목장 출석부 </title>
+    <title>2026년 여호수아 목장 출석부 (목자용)</title>
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛪️</text></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛪️</text></svg>">
@@ -16,17 +16,24 @@
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; margin: 10px; background-color: #f4f4f9; }
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px solid #333; padding: 15px 5px; margin-bottom: 15px; text-align: center; }
+        .header { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px solid #333; padding: 15px 5px; margin-bottom: 10px; text-align: center; }
         .header-title { font-size: 18px; font-weight: bold; }
         .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; text-align: center; }
+        
+        /* 💡 한 줄로 쏙 들어가는 총 합계 요약 디자인 */
+        .summary-box { display: flex; justify-content: space-evenly; align-items: center; margin-bottom: 15px; font-weight: bold; color: #d32f2f; font-size: 13px; background: #fff8e1; padding: 10px 2px; border: 1px solid #333; letter-spacing: -0.5px; }
+        .summary-box div { white-space: nowrap; }
+        .summary-box span { color: #0044cc; margin: 0 2px; font-size: 14px; }
+
         table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
         th, td { border: 1px solid #333; padding: 8px 2px; font-size: 12px; }
         th { background-color: #fff8e1; word-break: keep-all; }
+        
         th:nth-child(1) { width: 14%; } 
         th:nth-child(2) { width: 14%; } 
         th:nth-child(3) { width: 28%; } 
         th:nth-child(4), th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 11%; } 
-        .count-cell { color: #d32f2f; font-weight: bold; font-size: 15px; background-color: #fff; }
+        
         .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
         .check-cell:hover { background-color: #e3f2fd; }
         .village-divider { border-bottom: 2px solid #000; }
@@ -36,25 +43,23 @@
 <body>
 
 <div class="container">
-    <div class="notice">터치하면 출석이 체크되며, 모든 관리자에게 실시간 공유됩니다.</div>
+    <div class="notice">터치하면 출석이 체크되며, 모든 목자와 실시간 공유됩니다.</div>
     <div class="header">
-        <div class="header-title">2026년 여호수아 목장 출석부 </div>
+        <div class="header-title">2026년 여호수아 목장 출석부 (목자용)</div>
         <div><input type="date" class="date-input" id="currentDate"></div>
+    </div>
+
+    <div class="summary-box">
+        <div>수요:<span id="tot-wed">0</span>명</div>
+        <div>금요:<span id="tot-fri">0</span>명</div>
+        <div>주일:<span id="tot-sun">0</span>명</div>
+        <div>마을:<span id="tot-vil">0</span>명</div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th rowspan="2">마을</th>
-                <th rowspan="2">직분</th>
-                <th rowspan="2">이름</th>
-                <th class="count-cell" id="count-wed">0</th>
-                <th class="count-cell" id="count-fri">0</th>
-                <th class="count-cell" id="count-sun">0</th>
-                <th class="count-cell" id="count-vil">0</th>
-            </tr>
-            <tr>
-                <th>수요</th><th>금요</th><th>주일</th><th>마을</th>
+                <th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th>
             </tr>
         </thead>
         <tbody id="tableBody">
@@ -163,10 +168,10 @@
             tbody.appendChild(tr);
         });
         
-        document.getElementById('count-wed').innerText = wedCount;
-        document.getElementById('count-fri').innerText = friCount;
-        document.getElementById('count-sun').innerText = sunCount;
-        document.getElementById('count-vil').innerText = vilCount;
+        document.getElementById('tot-wed').innerText = wedCount;
+        document.getElementById('tot-fri').innerText = friCount;
+        document.getElementById('tot-sun').innerText = sunCount;
+        document.getElementById('tot-vil').innerText = vilCount;
     }
 
     window.toggleCheck = (idx, day) => {
