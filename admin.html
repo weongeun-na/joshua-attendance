@@ -23,11 +23,11 @@
         .header-title { font-size: 18px; font-weight: bold; }
         .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; text-align: center; }
         
-        /* 총 합계 요약 디자인 */
-        .summary-box { text-align: center; margin-bottom: 15px; font-weight: bold; color: #d32f2f; font-size: 15px; background: #fff8e1; padding: 8px; border: 1px solid #333; }
-        .summary-box span { color: #0044cc; margin: 0 5px; }
+        /* 💡 한 줄로 쏙 들어가는 총 합계 요약 디자인 */
+        .summary-box { display: flex; justify-content: space-evenly; align-items: center; margin-bottom: 15px; font-weight: bold; color: #d32f2f; font-size: 13px; background: #fff8e1; padding: 10px 2px; border: 1px solid #333; letter-spacing: -0.5px; }
+        .summary-box div { white-space: nowrap; }
+        .summary-box span { color: #0044cc; margin: 0 2px; font-size: 14px; }
 
-        /* 표 2단 분리를 위한 래퍼 디자인 */
         .table-wrapper { display: flex; flex-direction: column; gap: 15px; }
         .split-table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
         
@@ -48,7 +48,6 @@
         .btn-del { background-color: #ff9800; padding: 4px 6px; font-size: 11px; cursor: pointer; }
         .hide-on-print { display: table-cell; }
 
-        /* 📸 캡처(A4) 전용 마법 스타일: 이 모드가 켜지면 표가 2단 가로로 변신합니다 */
         .export-mode { width: 850px !important; max-width: none !important; padding: 20px !important; }
         .export-mode .table-wrapper { flex-direction: row; align-items: flex-start; }
         .export-mode .split-table { width: 50%; }
@@ -69,10 +68,10 @@
     </div>
 
     <div class="summary-box">
-        수요: <span id="tot-wed">0</span>명 &nbsp;|&nbsp; 
-        금요: <span id="tot-fri">0</span>명 &nbsp;|&nbsp; 
-        주일: <span id="tot-sun">0</span>명 &nbsp;|&nbsp; 
-        마을: <span id="tot-vil">0</span>명
+        <div>수요:<span id="tot-wed">0</span>명</div>
+        <div>금요:<span id="tot-fri">0</span>명</div>
+        <div>주일:<span id="tot-sun">0</span>명</div>
+        <div>마을:<span id="tot-vil">0</span>명</div>
     </div>
 
     <div class="table-wrapper" id="table-wrapper">
@@ -123,7 +122,6 @@
     dateInput.addEventListener('change', loadData);
 
     const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
-    // 왼쪽 표에 들어갈 마을 지정 (원본 문서와 동일하게 반으로 나누기)
     const leftVillages = ['열매', '믿음', '소망', '축복'];
 
     let audioCtx;
@@ -208,7 +206,6 @@
                 <td class="hide-on-print action-col"><button class="admin-btn btn-del" onclick="deleteMember(${idx})">삭제</button></td>
             `;
             
-            // 마을 이름에 따라 왼쪽/오른쪽 표로 자동으로 나눠서 배치
             if (leftVillages.includes(m.village)) {
                 tbodyLeft.appendChild(tr);
             } else {
@@ -232,7 +229,7 @@
 
     window.deleteMember = (idx) => {
         const cleanName = members[idx].name.replace('<br>', '');
-        if(confirm(`[${cleanName}] 성도님을 명단에서 삭제하시겠습니까?`)) {
+        if(confirm(`[${cleanName}] 님을 명단에서 삭제하시겠습니까?`)) {
             members.splice(idx, 1);
             const newMembers = members.filter(m => m !== null && m !== undefined);
             set(ref(db, 'members'), newMembers);
@@ -249,18 +246,16 @@
         }
     });
 
-    // 📸 캡처 마법 발동 함수
     function prepareCapture() {
         const elems = document.querySelectorAll('.hide-on-print');
         elems.forEach(el => el.style.display = 'none');
         
         const area = document.getElementById('capture-area');
         const titleEl = document.getElementById('mainTitle');
-        titleEl.innerText = '2026년 여호수아 목장 출석부'; // 관리자 글씨 제거
-        area.classList.add('export-mode'); // 표를 넓게 펼치고 2단으로 접는 마법 발동!
+        titleEl.innerText = '2026년 여호수아 목장 출석부'; 
+        area.classList.add('export-mode'); 
     }
 
-    // 📸 원래 모바일 화면으로 되돌리는 함수
     function revertCapture() {
         const elems = document.querySelectorAll('.hide-on-print');
         elems.forEach(el => el.style.display = '');
@@ -268,12 +263,12 @@
         const area = document.getElementById('capture-area');
         const titleEl = document.getElementById('mainTitle');
         titleEl.innerText = '2026년 여호수아 목장 출석부 (관리자)';
-        area.classList.remove('export-mode'); // 원래 1단 모바일 뷰로 복구
+        area.classList.remove('export-mode'); 
     }
 
     document.getElementById('imgBtn').addEventListener('click', () => {
         prepareCapture();
-        setTimeout(() => { // 화면이 2단으로 변할 시간을 0.1초 줍니다.
+        setTimeout(() => { 
             html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `출석부_${dateInput.value}.png`;
