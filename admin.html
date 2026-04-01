@@ -16,26 +16,23 @@
     
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; margin: 10px; background-color: #f4f4f9; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        #mobile-view { max-width: 900px; margin: 0 auto; background: white; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .header { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px solid #333; padding: 15px 5px; margin-bottom: 10px; text-align: center; }
         .header-title { font-size: 18px; font-weight: bold; }
         .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; text-align: center; cursor: pointer; }
-        
         .week-label { font-size: 12px; color: #666; margin-bottom: 5px; font-weight: bold; }
-
+        
         .summary-box { display: flex; justify-content: space-evenly; align-items: center; margin-bottom: 15px; font-weight: bold; color: #d32f2f; font-size: 13px; background: #fff8e1; padding: 10px 2px; border: 1px solid #333; letter-spacing: -0.5px; }
         .summary-box div { white-space: nowrap; }
         .summary-box span { color: #0044cc; margin: 0 2px; font-size: 14px; }
 
-        .table-wrapper { display: flex; flex-direction: column; gap: 15px; }
-        .split-table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
-        
-        th, td { border: 1px solid #333; padding: 8px 2px; font-size: 12px; }
-        th { background-color: #fff8e1; word-break: keep-all; }
-        th:nth-child(1), th:nth-child(2) { width: 12%; } 
-        th:nth-child(3) { width: 22%; } 
-        th:nth-child(4), th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 10%; } 
-        th:nth-child(8) { width: 14%; } 
+        .mobile-table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
+        .mobile-table th, .mobile-table td { border: 1px solid #333; padding: 8px 1px; font-size: 11px; }
+        .mobile-table th { background-color: #fff8e1; word-break: keep-all; }
+        .mobile-table th:nth-child(1), .mobile-table th:nth-child(2) { width: 12%; } 
+        .mobile-table th:nth-child(3) { width: 22%; } 
+        .mobile-table th:nth-child(4), .mobile-table th:nth-child(5), .mobile-table th:nth-child(6), .mobile-table th:nth-child(7) { width: 10%; } 
+        .mobile-table th:nth-child(8) { width: 14%; } 
         
         .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
         .check-cell:hover { background-color: #e3f2fd; }
@@ -45,12 +42,32 @@
         .btn-pdf { background-color: #d32f2f; }
         .btn-add { background-color: #1976D2; width: 100%; margin-top: 10px; padding: 12px; font-size: 16px; }
         .btn-del { background-color: #ff9800; padding: 4px 6px; font-size: 11px; cursor: pointer; }
-        .hide-on-print { display: table-cell; }
 
-        .export-mode { width: 850px !important; max-width: none !important; padding: 20px !important; }
-        .export-mode .table-wrapper { flex-direction: row; align-items: flex-start; }
-        .export-mode .split-table { width: 50%; }
-        .export-mode th, .export-mode td { padding: 4px 1px !important; font-size: 11px !important; }
+        /* 🖨️ 인쇄 전용(A4) 2단 설정 */
+        #print-view { display: none; width: 1100px; background: white; padding: 20px; box-sizing: border-box; }
+        .print-header-area { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+        .print-title { font-size: 28px; font-weight: bold; letter-spacing: -1px; }
+        .print-summary-tbl { border-collapse: collapse; text-align: center; border: 2px solid #000; font-size: 12px; font-weight: bold; }
+        .print-summary-tbl th, .print-summary-tbl td { border: 1px solid #000; padding: 4px 10px; }
+        .print-summary-tbl th { background-color: #f0f0f0; }
+        .print-grid { display: flex; gap: 15px; width: 100%; }
+        .print-table { width: 50%; border-collapse: collapse; text-align: center; font-size: 11px; border: 2px solid #000; table-layout: fixed; }
+        .print-table th, .print-table td { border: 1px solid #000; padding: 3px 1px; }
+        .print-table thead th { background-color: #e8f5e9; font-weight: bold; }
+        .print-village-title { background-color: #c8e6c9 !important; font-weight: bold; letter-spacing: 1px; font-size: 12px; }
+        .col-name { width: 22%; }
+        .col-chk { width: 7%; color: #0044cc; font-weight: bold; font-size: 12px; }
+
+        /* 💡 새 인원 추가 모달 스타일 */
+        #add-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; box-sizing: border-box; }
+        .modal-content h3 { margin-top: 0; color: #1976D2; border-bottom: 2px solid #1976D2; padding-bottom: 10px; }
+        .modal-content label { display: block; margin: 15px 0 5px; font-weight: bold; font-size: 14px; }
+        .modal-content select, .modal-content input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btns button { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-save { background: #1976D2; color: white; }
+        .btn-cancel { background: #999; color: white; }
     </style>
 </head>
 <body>
@@ -60,41 +77,73 @@
     <button class="admin-btn btn-pdf" id="pdfBtn">📄 PDF 저장</button>
 </div>
 
-<div class="container" id="capture-area">
+<div id="mobile-view">
     <div class="header">
         <div class="header-title" id="mainTitle">2026년 여호수아 목장 출석부 (관리자)</div>
-        <div class="week-label" id="weekRange">수요일 ~ 일요일 주간 데이터</div>
+        <div class="week-label" id="weekRange">주간 데이터 불러오는 중...</div>
         <div><input type="date" class="date-input" id="currentDate"></div>
     </div>
-
     <div class="summary-box">
-        <div>수요:<span id="tot-wed">0</span></div>
-        <div>금요:<span id="tot-fri">0</span></div>
-        <div>주일:<span id="tot-sun">0</span></div>
-        <div>마을:<span id="tot-vil">0</span></div>
+        <div>수요:<span id="tot-wed">0</span></div><div>금요:<span id="tot-fri">0</span></div>
+        <div>주일:<span id="tot-sun">0</span></div><div>마을:<span id="tot-vil">0</span></div>
     </div>
+    <table class="mobile-table">
+        <thead>
+            <tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th>관리</th></tr>
+        </thead>
+        <tbody id="mobileBody"></tbody>
+    </table>
+    <button class="admin-btn btn-add" id="addBtn">+ 새 인원 추가</button>
+</div>
 
-    <div class="table-wrapper" id="table-wrapper">
-        <table class="split-table">
-            <thead>
-                <tr>
-                    <th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th class="hide-on-print action-col">관리</th>
-                </tr>
-            </thead>
-            <tbody id="tbody-left"></tbody>
-        </table>
+<div id="add-modal">
+    <div class="modal-content">
+        <h3>새 인원 등록</h3>
+        <label>마을 선택</label>
+        <select id="modal-village">
+            <option value="열매">열매</option>
+            <option value="믿음">믿음</option>
+            <option value="소망">소망</option>
+            <option value="축복">축복</option>
+            <option value="온유">온유</option>
+            <option value="만배">만배</option>
+            <option value="생명수">생명수</option>
+            <option value="갈렙">갈렙</option>
+            <option value="약속">약속</option>
+        </select>
+        <label>직분 (목자/순장/공란)</label>
+        <input type="text" id="modal-role" placeholder="예: 목자">
+        <label>이름</label>
+        <input type="text" id="modal-name" placeholder="성함 입력">
+        <div class="modal-btns">
+            <button class="btn-cancel" id="modal-cancel">취소</button>
+            <button class="btn-save" id="modal-save">저장하기</button>
+        </div>
+    </div>
+</div>
 
-        <table class="split-table">
-            <thead>
-                <tr>
-                    <th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th class="hide-on-print action-col">관리</th>
-                </tr>
-            </thead>
-            <tbody id="tbody-right"></tbody>
+<div id="print-view">
+    <div class="print-header-area">
+        <div class="print-title">여호수아 목장 <span class="print-date" id="printDateTxt"></span></div>
+        <table class="print-summary-tbl">
+            <tr><th>주일</th><th>마을</th><th rowspan="2" style="padding: 0 15px;">계</th></tr>
+            <tr><td id="print-tot-sun">0</td><td id="print-tot-vil">0</td></tr>
         </table>
     </div>
-    
-    <button class="admin-btn btn-add hide-on-print" id="addBtn">+ 새 인원 추가</button>
+    <div class="print-grid">
+        <table class="print-table">
+            <thead>
+                <tr><th class="col-name">성 명</th><th class="col-chk">수<br>요</th><th class="col-chk">금<br>요</th><th class="col-chk">주<br>일</th><th class="col-chk">마<br>을</th><th class="col-name">성 명</th><th class="col-chk">수<br>요</th><th class="col-chk">금<br>요</th><th class="col-chk">주<br>일</th><th class="col-chk">마<br>을</th></tr>
+            </thead>
+            <tbody id="printLeftBody"></tbody>
+        </table>
+        <table class="print-table">
+            <thead>
+                <tr><th class="col-name">성 명</th><th class="col-chk">수<br>요</th><th class="col-chk">금<br>요</th><th class="col-chk">주<br>일</th><th class="col-chk">마<br>을</th><th class="col-name">성 명</th><th class="col-chk">수<br>요</th><th class="col-chk">금<br>요</th><th class="col-chk">주<br>일</th><th class="col-chk">마<br>을</th></tr>
+            </thead>
+            <tbody id="printRightBody"></tbody>
+        </table>
+    </div>
 </div>
 
 <script type="module">
@@ -113,23 +162,14 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-
-    let members = [];
-    let attendanceData = {};
+    let members = []; let attendanceData = {};
     const dateInput = document.getElementById('currentDate');
-    
-    // 💡 수요일 기준 주간 키 계산 함수
+
     function getWeekKey(date) {
-        const d = new Date(date);
-        const day = d.getDay(); // 0:일, 1:월, 2:화, 3:수, 4:목, 5:금, 6:토
-        // 수요일(3)을 기준으로 며칠 전인지 계산
+        const d = new Date(date); const day = d.getDay();
         const diff = (day >= 3) ? (day - 3) : (day + 4);
         d.setDate(d.getDate() - diff);
-        
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const dayStr = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${dayStr}`;
+        return d.toISOString().split('T')[0];
     }
 
     dateInput.valueAsDate = new Date();
@@ -142,28 +182,20 @@
     function playSound(isCheck) {
         try {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.type = 'sine';
+            osc.connect(gain); gain.connect(audioCtx.destination);
             osc.frequency.setValueAtTime(isCheck ? 880 : 440, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            osc.start(audioCtx.currentTime);
-            osc.stop(audioCtx.currentTime + 0.1);
-            setTimeout(() => { osc.disconnect(); gain.disconnect(); }, 200);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
         } catch(e) {}
     }
 
-    function init() {
+    async function init() {
         onValue(ref(db, 'members'), (snap) => {
-            let loadedMembers = snap.val() || [];
-            members = loadedMembers.filter(m => m !== null).sort((a, b) => {
-                let aIndex = villageOrder.indexOf(a.village);
-                let bIndex = villageOrder.indexOf(b.village);
-                return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
+            let loaded = snap.val() || [];
+            members = loaded.filter(m => m !== null).sort((a, b) => {
+                return villageOrder.indexOf(a.village) - villageOrder.indexOf(b.village);
             });
             renderTable();
         });
@@ -172,12 +204,9 @@
 
     function loadData() {
         const weekKey = getWeekKey(dateInput.value);
-        // 사용자에게 현재 어떤 주간의 데이터를 보는지 표시
-        const startDay = new Date(weekKey);
-        const endDay = new Date(startDay);
+        const startDay = new Date(weekKey); const endDay = new Date(startDay);
         endDay.setDate(endDay.getDate() + 4);
-        document.getElementById('weekRange').innerText = `${startDay.getMonth()+1}/${startDay.getDate()}(수) ~ ${endDay.getMonth()+1}/${endDay.getDate()}(일) 주간 출석`;
-
+        document.getElementById('weekRange').innerText = `${startDay.getMonth()+1}/${startDay.getDate()}(수) ~ ${endDay.getMonth()+1}/${endDay.getDate()}(일) 데이터`;
         onValue(ref(db, `attendance/${weekKey}`), (snap) => {
             attendanceData = snap.val() || {};
             renderTable();
@@ -185,22 +214,14 @@
     }
 
     function renderTable() {
-        const tbodyLeft = document.getElementById('tbody-left');
-        const tbodyRight = document.getElementById('tbody-right');
-        tbodyLeft.innerHTML = ''; tbodyRight.innerHTML = '';
-        let counts = { wed: 0, fri: 0, sun: 0, vil: 0 };
-
+        const tbodyMobile = document.getElementById('mobileBody');
+        tbodyMobile.innerHTML = '';
+        let c = { wed: 0, fri: 0, sun: 0, vil: 0 };
         members.forEach((m, idx) => {
             const checks = attendanceData[idx] || {};
-            if(checks.wed) counts.wed++;
-            if(checks.fri) counts.fri++;
-            if(checks.sun) counts.sun++;
-            if(checks.vil) counts.vil++;
-
+            if(checks.wed) c.wed++; if(checks.fri) c.fri++; if(checks.sun) c.sun++; if(checks.vil) c.vil++;
             const tr = document.createElement('tr');
-            const isLast = (idx === members.length - 1) || (members[idx+1].village !== m.village);
-            if(isLast) tr.classList.add('village-divider');
-            
+            if(idx === members.length - 1 || members[idx+1].village !== m.village) tr.classList.add('village-divider');
             let dName = m.name.includes('(') ? m.name.replace('(', '<br>(') : m.name;
             tr.innerHTML = `
                 <td>${m.village}</td><td>${m.role}</td><td>${dName}</td>
@@ -208,56 +229,85 @@
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
-                <td class="hide-on-print"><button class="admin-btn btn-del" onclick="deleteMember(${idx})">삭제</button></td>
+                <td><button class="admin-btn btn-del" onclick="deleteMember(${idx})">삭제</button></td>
             `;
-            (leftVillages.includes(m.village) ? tbodyLeft : tbodyRight).appendChild(tr);
+            tbodyMobile.appendChild(tr);
         });
-        
-        document.getElementById('tot-wed').innerText = counts.wed;
-        document.getElementById('tot-fri').innerText = counts.fri;
-        document.getElementById('tot-sun').innerText = counts.sun;
-        document.getElementById('tot-vil').innerText = counts.vil;
+        document.getElementById('tot-wed').innerText = c.wed; document.getElementById('tot-fri').innerText = c.fri;
+        document.getElementById('tot-sun').innerText = c.sun; document.getElementById('tot-vil').innerText = c.vil;
+        document.getElementById('print-tot-sun').innerText = c.sun; document.getElementById('print-tot-vil').innerText = c.vil;
+        buildPrintGrid();
+        const dObj = new Date(dateInput.value);
+        document.getElementById('printDateTxt').innerText = `(${dObj.getFullYear()}년 ${dObj.getMonth()+1}월 ${dObj.getDate()}일)`;
+    }
+
+    function buildPrintGrid() {
+        const tLeft = document.getElementById('printLeftBody'); const tRight = document.getElementById('printRightBody');
+        tLeft.innerHTML = ''; tRight.innerHTML = '';
+        const allVils = [...new Set(members.map(m => m.village))];
+        const half = Math.ceil(allVils.length / 2);
+        const draw = (vils, target) => {
+            vils.forEach(vName => {
+                const vMems = members.filter(m => m.village === vName);
+                const trH = document.createElement('tr');
+                trH.innerHTML = `<td colspan="10" class="print-village-title">${vName}</td>`;
+                target.appendChild(trH);
+                const mid = Math.ceil(vMems.length / 2);
+                for(let i=0; i<mid; i++) {
+                    const tr = document.createElement('tr');
+                    const m1 = vMems[i], m2 = vMems[i+mid];
+                    const makeCell = (m) => {
+                        if(!m) return `<td></td><td></td><td></td><td></td><td></td>`;
+                        const idx = members.indexOf(m); const ch = attendanceData[idx] || {};
+                        return `<td>${m.role?m.role+' ':''}${m.name}</td><td>${ch.wed?'O':''}</td><td>${ch.fri?'O':''}</td><td>${ch.sun?'O':''}</td><td>${ch.vil?'O':''}</td>`;
+                    };
+                    tr.innerHTML = makeCell(m1) + makeCell(m2);
+                    target.appendChild(tr);
+                }
+            });
+        };
+        draw(allVils.slice(0, half), tLeft); draw(allVils.slice(half), tRight);
     }
 
     window.toggleCheck = (idx, day) => {
         const weekKey = getWeekKey(dateInput.value);
-        const current = attendanceData[idx]?.[day] || false;
-        const nextState = !current;
-        set(ref(db, `attendance/${weekKey}/${idx}/${day}`), nextState);
-        playSound(nextState);
+        const next = !(attendanceData[idx]?.[day] || false);
+        set(ref(db, `attendance/${weekKey}/${idx}/${day}`), next);
+        playSound(next);
     };
 
-    window.deleteMember = (idx) => {
-        if(confirm(`삭제하시겠습니까?`)) {
-            members.splice(idx, 1);
-            set(ref(db, 'members'), members);
-        }
-    };
+    window.deleteMember = (idx) => { if(confirm("삭제하시겠습니까?")) { members.splice(idx, 1); set(ref(db, 'members'), members); } };
 
-    document.getElementById('addBtn').addEventListener('click', () => {
-        const v = prompt("마을"); const r = prompt("직분"); const n = prompt("이름");
-        if(v && n) {
+    // 모달 제어 로직
+    const modal = document.getElementById('add-modal');
+    document.getElementById('addBtn').onclick = () => { modal.style.display = 'flex'; };
+    document.getElementById('modal-cancel').onclick = () => { modal.style.display = 'none'; };
+    document.getElementById('modal-save').onclick = () => {
+        const v = document.getElementById('modal-village').value;
+        const r = document.getElementById('modal-role').value;
+        const n = document.getElementById('modal-name').value;
+        if(n) {
             members.push({ village: v, role: r, name: n });
             set(ref(db, 'members'), members);
-        }
-    });
+            modal.style.display = 'none';
+            document.getElementById('modal-role').value = '';
+            document.getElementById('modal-name').value = '';
+        } else { alert("이름을 입력해주세요."); }
+    };
 
-    document.getElementById('imgBtn').addEventListener('click', () => {
-        const area = document.getElementById('capture-area');
-        area.classList.add('export-mode');
-        document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = 'none');
+    document.getElementById('pdfBtn').addEventListener('click', () => {
+        document.getElementById('mobile-view').style.display = 'none';
+        document.getElementById('print-view').style.display = 'block';
         setTimeout(() => {
-            html2canvas(area, {scale: 2}).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `여호수아_출석부_${getWeekKey(dateInput.value)}.png`;
-                link.href = canvas.toDataURL();
-                link.click();
-                area.classList.remove('export-mode');
-                document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = '');
+            html2canvas(document.getElementById('print-view'), {scale: 2}).then(canvas => {
+                const pdf = new window.jspdf.jsPDF('l', 'mm', 'a4');
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 10, 297, canvas.height * 297 / canvas.width);
+                pdf.save(`여호수아_출석부_${dateInput.value}.pdf`);
+                document.getElementById('print-view').style.display = 'none';
+                document.getElementById('mobile-view').style.display = 'block';
             });
         }, 200);
     });
-
     init();
 </script>
 </body>
