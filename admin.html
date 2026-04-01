@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
     <title>2026년 여호수아 목장 출석부 (관리자)</title>
     
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%23800000%22 d=%22M15 45L50 15L85 45V90H15V45Z M45 45V28H55V45H45Z M45 70V80H55V70H45Z%22/></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%23800000%22 d=%22M15 45L50 15L85 45V90H15V45Z M45 45V28H55V45H45Z M45 70V80H55V70H45Z%22/></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%231976D2%22 d=%22M15 45L50 15L85 45V90H15V45Z M45 45V28H55V45H45Z M45 70V80H55V70H45Z%22/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%231976D2%22 d=%22M15 45L50 15L85 45V90H15V45Z M45 45V28H55V45H45Z M45 70V80H55V70H45Z%22/></svg>">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -21,9 +19,10 @@
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .header { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px solid #333; padding: 15px 5px; margin-bottom: 10px; text-align: center; }
         .header-title { font-size: 18px; font-weight: bold; }
-        .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; text-align: center; }
+        .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; text-align: center; cursor: pointer; }
         
-        /* 💡 한 줄로 쏙 들어가는 총 합계 요약 디자인 */
+        .week-label { font-size: 12px; color: #666; margin-bottom: 5px; font-weight: bold; }
+
         .summary-box { display: flex; justify-content: space-evenly; align-items: center; margin-bottom: 15px; font-weight: bold; color: #d32f2f; font-size: 13px; background: #fff8e1; padding: 10px 2px; border: 1px solid #333; letter-spacing: -0.5px; }
         .summary-box div { white-space: nowrap; }
         .summary-box span { color: #0044cc; margin: 0 2px; font-size: 14px; }
@@ -64,14 +63,15 @@
 <div class="container" id="capture-area">
     <div class="header">
         <div class="header-title" id="mainTitle">2026년 여호수아 목장 출석부 (관리자)</div>
+        <div class="week-label" id="weekRange">수요일 ~ 일요일 주간 데이터</div>
         <div><input type="date" class="date-input" id="currentDate"></div>
     </div>
 
     <div class="summary-box">
-        <div>수요:<span id="tot-wed">0</span>명</div>
-        <div>금요:<span id="tot-fri">0</span>명</div>
-        <div>주일:<span id="tot-sun">0</span>명</div>
-        <div>마을:<span id="tot-vil">0</span>명</div>
+        <div>수요:<span id="tot-wed">0</span></div>
+        <div>금요:<span id="tot-fri">0</span></div>
+        <div>주일:<span id="tot-sun">0</span></div>
+        <div>마을:<span id="tot-vil">0</span></div>
     </div>
 
     <div class="table-wrapper" id="table-wrapper">
@@ -118,6 +118,20 @@
     let attendanceData = {};
     const dateInput = document.getElementById('currentDate');
     
+    // 💡 수요일 기준 주간 키 계산 함수
+    function getWeekKey(date) {
+        const d = new Date(date);
+        const day = d.getDay(); // 0:일, 1:월, 2:화, 3:수, 4:목, 5:금, 6:토
+        // 수요일(3)을 기준으로 며칠 전인지 계산
+        const diff = (day >= 3) ? (day - 3) : (day + 4);
+        d.setDate(d.getDate() - diff);
+        
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${dayStr}`;
+    }
+
     dateInput.valueAsDate = new Date();
     dateInput.addEventListener('change', loadData);
 
@@ -146,19 +160,10 @@
     function init() {
         onValue(ref(db, 'members'), (snap) => {
             let loadedMembers = snap.val() || [];
-            loadedMembers = loadedMembers.filter(m => m !== null && m !== undefined);
-            let needsFix = false;
-            loadedMembers.forEach(m => {
-                if (m.village === '반배') { m.village = '만배'; needsFix = true; }
-            });
-            if (needsFix) set(ref(db, 'members'), loadedMembers);
-
-            members = loadedMembers.sort((a, b) => {
+            members = loadedMembers.filter(m => m !== null).sort((a, b) => {
                 let aIndex = villageOrder.indexOf(a.village);
                 let bIndex = villageOrder.indexOf(b.village);
-                if (aIndex === -1) aIndex = 99;
-                if (bIndex === -1) bIndex = 99;
-                return aIndex - bIndex;
+                return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
             });
             renderTable();
         });
@@ -166,8 +171,14 @@
     }
 
     function loadData() {
-        const dateStr = dateInput.value;
-        onValue(ref(db, `attendance/${dateStr}`), (snap) => {
+        const weekKey = getWeekKey(dateInput.value);
+        // 사용자에게 현재 어떤 주간의 데이터를 보는지 표시
+        const startDay = new Date(weekKey);
+        const endDay = new Date(startDay);
+        endDay.setDate(endDay.getDate() + 4);
+        document.getElementById('weekRange').innerText = `${startDay.getMonth()+1}/${startDay.getDate()}(수) ~ ${endDay.getMonth()+1}/${endDay.getDate()}(일) 주간 출석`;
+
+        onValue(ref(db, `attendance/${weekKey}`), (snap) => {
             attendanceData = snap.val() || {};
             renderTable();
         });
@@ -177,120 +188,74 @@
         const tbodyLeft = document.getElementById('tbody-left');
         const tbodyRight = document.getElementById('tbody-right');
         tbodyLeft.innerHTML = ''; tbodyRight.innerHTML = '';
-        
-        let wedCount = 0, friCount = 0, sunCount = 0, vilCount = 0;
+        let counts = { wed: 0, fri: 0, sun: 0, vil: 0 };
 
         members.forEach((m, idx) => {
-            if(!m) return;
             const checks = attendanceData[idx] || {};
-            if(checks.wed) wedCount++;
-            if(checks.fri) friCount++;
-            if(checks.sun) sunCount++;
-            if(checks.vil) vilCount++;
+            if(checks.wed) counts.wed++;
+            if(checks.fri) counts.fri++;
+            if(checks.sun) counts.sun++;
+            if(checks.vil) counts.vil++;
 
             const tr = document.createElement('tr');
-            const isLastInVillage = (idx === members.length - 1) || (members[idx+1].village !== m.village);
-            if(isLastInVillage) tr.classList.add('village-divider');
+            const isLast = (idx === members.length - 1) || (members[idx+1].village !== m.village);
+            if(isLast) tr.classList.add('village-divider');
             
-            let displayName = m.name;
-            if (displayName.includes('(') && !displayName.includes('<br>')) {
-                displayName = displayName.replace('(', '<br>(');
-            }
-            
+            let dName = m.name.includes('(') ? m.name.replace('(', '<br>(') : m.name;
             tr.innerHTML = `
-                <td>${m.village}</td><td>${m.role}</td><td>${displayName}</td>
+                <td>${m.village}</td><td>${m.role}</td><td>${dName}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
                 <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
-                <td class="hide-on-print action-col"><button class="admin-btn btn-del" onclick="deleteMember(${idx})">삭제</button></td>
+                <td class="hide-on-print"><button class="admin-btn btn-del" onclick="deleteMember(${idx})">삭제</button></td>
             `;
-            
-            if (leftVillages.includes(m.village)) {
-                tbodyLeft.appendChild(tr);
-            } else {
-                tbodyRight.appendChild(tr);
-            }
+            (leftVillages.includes(m.village) ? tbodyLeft : tbodyRight).appendChild(tr);
         });
         
-        document.getElementById('tot-wed').innerText = wedCount;
-        document.getElementById('tot-fri').innerText = friCount;
-        document.getElementById('tot-sun').innerText = sunCount;
-        document.getElementById('tot-vil').innerText = vilCount;
+        document.getElementById('tot-wed').innerText = counts.wed;
+        document.getElementById('tot-fri').innerText = counts.fri;
+        document.getElementById('tot-sun').innerText = counts.sun;
+        document.getElementById('tot-vil').innerText = counts.vil;
     }
 
     window.toggleCheck = (idx, day) => {
-        const dateStr = dateInput.value;
+        const weekKey = getWeekKey(dateInput.value);
         const current = attendanceData[idx]?.[day] || false;
         const nextState = !current;
-        set(ref(db, `attendance/${dateStr}/${idx}/${day}`), nextState);
+        set(ref(db, `attendance/${weekKey}/${idx}/${day}`), nextState);
         playSound(nextState);
     };
 
     window.deleteMember = (idx) => {
-        const cleanName = members[idx].name.replace('<br>', '');
-        if(confirm(`[${cleanName}] 님을 명단에서 삭제하시겠습니까?`)) {
+        if(confirm(`삭제하시겠습니까?`)) {
             members.splice(idx, 1);
-            const newMembers = members.filter(m => m !== null && m !== undefined);
-            set(ref(db, 'members'), newMembers);
+            set(ref(db, 'members'), members);
         }
     };
 
     document.getElementById('addBtn').addEventListener('click', () => {
-        const v = prompt("마을 이름을 입력하세요 (예: 만배)");
-        const r = prompt("직분을 입력하세요 (없으면 빈칸)");
-        const n = prompt("이름을 입력하세요 (예: 홍길동)");
+        const v = prompt("마을"); const r = prompt("직분"); const n = prompt("이름");
         if(v && n) {
             members.push({ village: v, role: r, name: n });
             set(ref(db, 'members'), members);
         }
     });
 
-    function prepareCapture() {
-        const elems = document.querySelectorAll('.hide-on-print');
-        elems.forEach(el => el.style.display = 'none');
-        
-        const area = document.getElementById('capture-area');
-        const titleEl = document.getElementById('mainTitle');
-        titleEl.innerText = '2026년 여호수아 목장 출석부'; 
-        area.classList.add('export-mode'); 
-    }
-
-    function revertCapture() {
-        const elems = document.querySelectorAll('.hide-on-print');
-        elems.forEach(el => el.style.display = '');
-        
-        const area = document.getElementById('capture-area');
-        const titleEl = document.getElementById('mainTitle');
-        titleEl.innerText = '2026년 여호수아 목장 출석부 (관리자)';
-        area.classList.remove('export-mode'); 
-    }
-
     document.getElementById('imgBtn').addEventListener('click', () => {
-        prepareCapture();
-        setTimeout(() => { 
-            html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
+        const area = document.getElementById('capture-area');
+        area.classList.add('export-mode');
+        document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = 'none');
+        setTimeout(() => {
+            html2canvas(area, {scale: 2}).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `출석부_${dateInput.value}.png`;
+                link.download = `여호수아_출석부_${getWeekKey(dateInput.value)}.png`;
                 link.href = canvas.toDataURL();
                 link.click();
-                revertCapture();
+                area.classList.remove('export-mode');
+                document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = '');
             });
-        }, 100);
-    });
-
-    document.getElementById('pdfBtn').addEventListener('click', () => {
-        prepareCapture();
-        setTimeout(() => {
-            html2canvas(document.getElementById('capture-area'), {scale: 2}).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-                const imgHeight = canvas.height * 210 / canvas.width;
-                pdf.addImage(imgData, 'PNG', 0, 10, 210, imgHeight);
-                pdf.save(`출석부_${dateInput.value}.pdf`);
-                revertCapture();
-            });
-        }, 100);
+        }, 200);
     });
 
     init();
