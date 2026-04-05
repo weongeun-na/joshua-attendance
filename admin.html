@@ -30,11 +30,11 @@
         th, td { border: 1px solid #333; padding: 6px 1px; font-size: 12px; line-height: 1.3; } 
         th { background-color: #fff8e1; word-break: keep-all; }
         
-        /* 💡 레이아웃 복구: 이름 2줄 출력을 위해 너비 20% 적용 */
+        /* 💡 2줄 출력을 위한 너비 최적화 */
         .mobile-table th:nth-child(1), .mobile-table th:nth-child(2) { width: 12%; } 
-        .mobile-table th:nth-child(3) { width: 20%; } 
+        .mobile-table th:nth-child(3) { width: 22%; } 
         .mobile-table th:nth-child(4), .mobile-table th:nth-child(5), .mobile-table th:nth-child(6), .mobile-table th:nth-child(7) { width: 10%; } 
-        .mobile-table th:nth-child(8) { width: 16%; } 
+        .mobile-table th:nth-child(8) { width: 14%; } 
         
         .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
         .village-divider { border-bottom: 2px solid #000; }
@@ -120,16 +120,28 @@
     let members = []; let attendanceData = {};
     const dateInput = document.getElementById('currentDate');
 
-    // 💡 날짜 관련 오류가 나지 않도록 강제 세팅
-    const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-    dateInput.value = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
+    // 💡 날짜 오류 방지 (안전한 오늘 날짜 세팅)
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    dateInput.value = `${yyyy}-${mm}-${dd}`;
 
-    function getWeekKey(date) {
-        if(!date) return "";
-        const d = new Date(date); const day = d.getDay();
+    // 💡 날짜 오류 방지 (수요일 계산 로직 강화)
+    function getWeekKey(dateStr) {
+        if (!dateStr) return "";
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return "";
+        
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        const day = d.getDay();
         const diff = (day >= 3) ? (day - 3) : (day + 4);
         d.setDate(d.getDate() - diff);
-        return d.toISOString().split('T')[0];
+        
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const dt = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${dt}`;
     }
 
     dateInput.addEventListener('change', loadData);
@@ -137,10 +149,15 @@
     const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
     const leftVillages = ['열매', '믿음', '소망', '축복'];
 
-    async function init() {
+    function init() {
         onValue(ref(db, 'members'), (snap) => {
             const data = snap.val() || [];
-            members = data.filter(m => m !== null).sort((a, b) => villageOrder.indexOf(a.village) - villageOrder.indexOf(b.village));
+            // 💡 데이터 오류 방어막 (null이거나 불량 데이터 무시)
+            members = data.filter(m => m && typeof m === 'object').sort((a, b) => {
+                const aVil = a.village || "";
+                const bVil = b.village || "";
+                return villageOrder.indexOf(aVil) - villageOrder.indexOf(bVil);
+            });
             renderTable();
         });
         loadData();
@@ -148,33 +165,119 @@
 
     function loadData() {
         const weekKey = getWeekKey(dateInput.value);
+        if (!weekKey) return;
+        
+        document.getElementById('weekRange').innerText = `${weekKey} (수) 시작 주간`;
         onValue(ref(db, `attendance/${weekKey}`), (snap) => { 
             attendanceData = snap.val() || {}; 
             renderTable(); 
         });
-        document.getElementById('weekRange').innerText = `${weekKey} (수) 시작 주간`;
     }
 
     function renderTable() {
-        const tLeft = document.getElementById('tbody-left');
-        const tRight = document.getElementById('tbody-right');
-        tLeft.innerHTML = ''; tRight.innerHTML = '';
-        let c = { wed: 0, fri: 0, sun: 0, vil: 0 };
+        try {
+            const tLeft = document.getElementById('tbody-left');
+            const tRight = document.getElementById('tbody-right');
+            tLeft.innerHTML = ''; tRight.innerHTML = '';
+            let c = { wed: 0, fri: 0, sun: 0, vil: 0 };
 
-        members.forEach((m, idx) => {
-            if(!m) return;
-            const ch = attendanceData[idx] || {};
-            if(ch.wed) c.wed++; if(ch.fri) c.fri++; if(ch.sun) c.sun++; if(ch.vil) c.vil++;
+            members.forEach((m, idx) => {
+                if(!m) return;
+                const ch = attendanceData[idx] || {};
+                if(ch.wed) c.wed++; if(ch.fri) c.fri++; if(ch.sun) c.sun++; if(ch.vil) c.vil++;
+                
+                const tr = document.createElement('tr');
+                const nextMember = members[idx+1];
+                if(idx === members.length - 1 || (nextMember && nextMember.village !== m.village)) {
+                    tr.classList.add('village-divider');
+                }
+                
+                // 💡 불량 데이터 방어막 및 2줄 처리
+                const safeName = m.name || "";
+                const safeVil = m.village || "-";
+                const safeRole = m.role || "";
+                const dName = safeName.includes('(') ? safeName.replace('(', '<br>(') : safeName;
+                
+                tr.innerHTML = `
+                    <td>${safeVil}</td><td>${safeRole}</td><td>${dName}</td>
+                    <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${ch.wed?'O':''}</td>
+                    <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${ch.fri?'O':''}</td>
+                    <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${ch.sun?'O':''}</td>
+                    <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${ch.vil?'O':''}</td>
+                    <td class="hide-on-print"><button class="btn-del" onclick="deleteMember(${idx})">삭제</button></td>
+                `;
+                
+                if (leftVillages.includes(safeVil)) {
+                    tLeft.appendChild(tr);
+                } else {
+                    tRight.appendChild(tr);
+                }
+            });
             
-            const tr = document.createElement('tr');
-            if(idx === members.length - 1 || (members[idx+1] && members[idx+1].village !== m.village)) tr.classList.add('village-divider');
-            
-            // 💡 이름 2줄 처리 마법 방어코드 (이름이 없어도 에러 안 남)
-            let safeName = m.name || "";
-            let dName = safeName.includes('(') ? safeName.replace('(', '<br>(') : safeName;
-            
-            tr.innerHTML = `
-                <td>${m.village || ""}</td><td>${m.role || ""}</td><td>${dName}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${ch.wed?'O':''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${ch.fri?'O':''}</td>
-                <td class="check-cell" onclick="toggleCheck
+            document.getElementById('tot-wed').innerText = c.wed;
+            document.getElementById('tot-fri').innerText = c.fri;
+            document.getElementById('tot-sun').innerText = c.sun;
+            document.getElementById('tot-vil').innerText = c.vil;
+        } catch (error) {
+            console.error("표 렌더링 중 오류 발생:", error);
+        }
+    }
+
+    window.toggleCheck = (idx, day) => {
+        const weekKey = getWeekKey(dateInput.value);
+        set(ref(db, `attendance/${weekKey}/${idx}/${day}`), !(attendanceData[idx]?.[day] || false));
+    };
+
+    window.deleteMember = (idx) => { 
+        if(confirm("삭제하시겠습니까?")) {
+            members.splice(idx, 1);
+            set(ref(db, 'members'), members);
+        }
+    };
+
+    document.getElementById('imgBtn').addEventListener('click', () => {
+        const area = document.getElementById('capture-area');
+        area.classList.add('export-mode');
+        document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = 'none');
+        setTimeout(() => {
+            html2canvas(area, {scale: 2, useCORS: true, backgroundColor: "#ffffff"}).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `여호수아_출석부_${getWeekKey(dateInput.value)}.png`;
+                link.href = canvas.toDataURL(); link.click();
+                area.classList.remove('export-mode');
+                document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = '');
+            });
+        }, 500);
+    });
+
+    document.getElementById('pdfBtn').addEventListener('click', () => {
+        const area = document.getElementById('capture-area');
+        area.classList.add('export-mode');
+        document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = 'none');
+        setTimeout(() => {
+            html2canvas(area, {scale: 2, backgroundColor: "#ffffff"}).then(canvas => {
+                const pdf = new window.jspdf.jsPDF('l', 'mm', 'a4');
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 10, 297, canvas.height * 297 / canvas.width);
+                pdf.save(`여호수아_출석부_${getWeekKey(dateInput.value)}.pdf`);
+                area.classList.remove('export-mode');
+                document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = '');
+            });
+        }, 500);
+    });
+
+    const modal = document.getElementById('add-modal');
+    document.getElementById('addBtn').onclick = () => modal.style.display = 'flex';
+    document.getElementById('modal-cancel').onclick = () => modal.style.display = 'none';
+    document.getElementById('modal-save').onclick = () => {
+        const v = document.getElementById('modal-village').value, r = document.getElementById('modal-role').value, n = document.getElementById('modal-name').value;
+        if(n) { 
+            members.push({ village:v, role:r, name:n }); 
+            set(ref(db, 'members'), members); 
+            modal.style.display = 'none'; 
+        }
+    };
+
+    init();
+</script>
+</body>
+</html>
