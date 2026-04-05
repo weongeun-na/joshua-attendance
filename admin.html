@@ -27,8 +27,15 @@
 
         .table-wrapper { display: flex; flex-direction: column; gap: 15px; }
         .split-table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
-        th, td { border: 1px solid #333; padding: 8px 2px; font-size: 12px; }
+        th, td { border: 1px solid #333; padding: 8px 1px; font-size: 12px; }
         th { background-color: #fff8e1; word-break: keep-all; }
+        
+        /* 💡 레이아웃 최적화: 이름 칸 너비 확보 */
+        .mobile-table th:nth-child(1), .mobile-table th:nth-child(2) { width: 12%; } 
+        .mobile-table th:nth-child(3) { width: 22%; } /* 👈 이름 칸 너비를 22%로 넓힘 */
+        .mobile-table th:nth-child(4), .mobile-table th:nth-child(5), .mobile-table th:nth-child(6), .mobile-table th:nth-child(7) { width: 10%; } 
+        .mobile-table th:nth-child(8) { width: 14%; } 
+        
         .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
         .village-divider { border-bottom: 2px solid #000; }
         .admin-btn { padding: 8px 15px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; color: white; font-weight: bold; }
@@ -36,12 +43,10 @@
         .btn-add { background-color: #1976D2; width: 100%; margin-top: 10px; padding: 12px; font-size: 16px; }
         .btn-del { background-color: #ff9800; padding: 4px 6px; font-size: 11px; cursor: pointer; color: white; border: none; border-radius: 3px; }
 
-        /* 💡 이미지 저장 시 2단으로 배열하기 위한 특수 설정 */
         .export-mode { width: 850px !important; padding: 20px !important; }
         .export-mode .table-wrapper { flex-direction: row !important; align-items: flex-start !important; }
         .export-mode .split-table { width: 50% !important; }
 
-        /* 모달 스타일 */
         #add-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; box-sizing: border-box; }
         .modal-content select, .modal-content input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
@@ -68,32 +73,14 @@
     </div>
 
     <div class="table-wrapper">
-        <table class="split-table">
-            <thead><tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th class="hide-on-print">관리</th></tr></thead>
+        <table class="split-table mobile-table"> <thead><tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th class="hide-on-print">관리</th></tr></thead>
             <tbody id="tbody-left"></tbody>
         </table>
-        <table class="split-table">
-            <thead><tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th class="hide-on-print">관리</th></tr></thead>
+        <table class="split-table mobile-table"> <thead><tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th class="hide-on-print">관리</th></tr></thead>
             <tbody id="tbody-right"></tbody>
         </table>
     </div>
     <button class="admin-btn btn-add hide-on-print" id="addBtn">+ 새 인원 추가</button>
-</div>
-
-<div id="add-modal">
-    <div class="modal-content">
-        <h3>새 인원 등록</h3>
-        <label>마을 선택</label>
-        <select id="modal-village">
-            <option value="열매">열매</option><option value="믿음">믿음</option><option value="소망">소망</option><option value="축복">축복</option><option value="온유">온유</option><option value="만배">만배</option><option value="생명수">생명수</option><option value="갈렙">갈렙</option><option value="약속">약속</option>
-        </select>
-        <input type="text" id="modal-role" placeholder="직분 (예: 목자)">
-        <input type="text" id="modal-name" placeholder="성함 입력">
-        <div class="modal-btns">
-            <button style="background:#999; color:white;" id="modal-cancel">취소</button>
-            <button style="background:#1976D2; color:white;" id="modal-save">저장</button>
-        </div>
-    </div>
 </div>
 
 <script type="module">
@@ -152,7 +139,10 @@
             if(ch.wed) c.wed++; if(ch.fri) c.fri++; if(ch.sun) c.sun++; if(ch.vil) c.vil++;
             const tr = document.createElement('tr');
             if(idx === members.length - 1 || members[idx+1].village !== m.village) tr.classList.add('village-divider');
-            let dName = m.name.includes('(') ? m.name.replace('(', '<br>(') : m.name;
+            
+            // 💡 괄호 앞 줄바꿈 삭제 (한 줄로 나오게)
+            let dName = m.name; 
+            
             tr.innerHTML = `<td>${m.village}</td><td>${m.role}</td><td>${dName}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${ch.wed?'O':''}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${ch.fri?'O':''}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${ch.sun?'O':''}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${ch.vil?'O':''}</td><td class="hide-on-print"><button class="btn-del" onclick="deleteMember(${idx})">삭제</button></td>`;
             (leftVillages.includes(m.village) ? tLeft : tRight).appendChild(tr);
         });
@@ -164,36 +154,23 @@
         set(ref(db, `attendance/${weekKey}/${idx}/${day}`), !(attendanceData[idx]?.[day] || false));
     };
 
-    // 📸 이미지 저장 로직 개선
+    // 이미지 저장 로직 (동일)
     document.getElementById('imgBtn').addEventListener('click', () => {
         const area = document.getElementById('capture-area');
         area.classList.add('export-mode');
         document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = 'none');
-
-        // 💡 0.5초 대기 후 캡처 (명단이 많으므로 안정화 시간 부여)
         setTimeout(() => {
-            html2canvas(area, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: "#ffffff",
-                logging: false
-            }).then(canvas => {
+            html2canvas(area, {scale: 2}).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `여호수아_출석부_${getWeekKey(dateInput.value)}.png`;
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-                
-                // 원상복구
+                link.href = canvas.toDataURL("image/png"); link.click();
                 area.classList.remove('export-mode');
                 document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = '');
-            }).catch(err => {
-                alert("이미지 저장 중 오류가 발생했습니다. 크롬 브라우저 사용을 권장합니다.");
-                console.error(err);
             });
         }, 500);
     });
 
-    // PDF 저장 (기존과 동일)
+    // PDF 저장 (동일)
     document.getElementById('pdfBtn').addEventListener('click', () => {
         const area = document.getElementById('capture-area');
         area.classList.add('export-mode');
@@ -208,15 +185,6 @@
             });
         }, 500);
     });
-
-    // 모달 로직
-    const modal = document.getElementById('add-modal');
-    document.getElementById('addBtn').onclick = () => modal.style.display = 'flex';
-    document.getElementById('modal-cancel').onclick = () => modal.style.display = 'none';
-    document.getElementById('modal-save').onclick = () => {
-        const v = document.getElementById('modal-village').value, r = document.getElementById('modal-role').value, n = document.getElementById('modal-name').value;
-        if(n) { members.push({ village:v, role:r, name:n }); set(ref(db, 'members'), members); modal.style.display = 'none'; }
-    };
 
     init();
 </script>
