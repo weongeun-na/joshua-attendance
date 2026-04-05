@@ -11,63 +11,41 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%231976D2%22 d=%22M15 45L50 15L85 45V90H15V45Z M45 45V28H55V45H45Z M45 70V80H55V70H45Z%22/></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%231976D2%22 d=%22M15 45L50 15L85 45V90H15V45Z M45 45V28H55V45H45Z M45 70V80H55V70H45Z%22/></svg>">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; margin: 10px; background-color: #f4f4f9; }
-        #mobile-view { max-width: 900px; margin: 0 auto; background: white; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 10px; background-color: #f4f4f9; -webkit-tap-highlight-color: transparent; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .header { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px solid #333; padding: 15px 5px; margin-bottom: 10px; text-align: center; }
         .header-title { font-size: 18px; font-weight: bold; }
         .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; text-align: center; cursor: pointer; }
         .week-label { font-size: 12px; color: #666; margin-bottom: 5px; font-weight: bold; }
         
         .summary-box { display: flex; justify-content: space-evenly; align-items: center; margin-bottom: 15px; font-weight: bold; color: #d32f2f; font-size: 13px; background: #fff8e1; padding: 10px 2px; border: 1px solid #333; letter-spacing: -0.5px; }
-        .summary-box div { white-space: nowrap; }
         .summary-box span { color: #0044cc; margin: 0 2px; font-size: 14px; }
 
-        .mobile-table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
-        .mobile-table th, .mobile-table td { border: 1px solid #333; padding: 8px 1px; font-size: 11px; }
-        .mobile-table th { background-color: #fff8e1; word-break: keep-all; }
-        .mobile-table th:nth-child(1), .mobile-table th:nth-child(2) { width: 12%; } 
-        .mobile-table th:nth-child(3) { width: 22%; } 
-        .mobile-table th:nth-child(4), .mobile-table th:nth-child(5), .mobile-table th:nth-child(6), .mobile-table th:nth-child(7) { width: 10%; } 
-        .mobile-table th:nth-child(8) { width: 14%; } 
-        
+        .table-wrapper { display: flex; flex-direction: column; gap: 15px; }
+        .split-table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
+        th, td { border: 1px solid #333; padding: 8px 2px; font-size: 12px; }
+        th { background-color: #fff8e1; word-break: keep-all; }
         .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
-        .check-cell:hover { background-color: #e3f2fd; }
         .village-divider { border-bottom: 2px solid #000; }
         .admin-btn { padding: 8px 15px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; color: white; font-weight: bold; }
-        .btn-img { background-color: #4CAF50; }
-        .btn-pdf { background-color: #d32f2f; }
+        .btn-img { background-color: #4CAF50; } .btn-pdf { background-color: #d32f2f; }
         .btn-add { background-color: #1976D2; width: 100%; margin-top: 10px; padding: 12px; font-size: 16px; }
-        .btn-del { background-color: #ff9800; padding: 4px 6px; font-size: 11px; cursor: pointer; }
+        .btn-del { background-color: #ff9800; padding: 4px 6px; font-size: 11px; cursor: pointer; color: white; border: none; border-radius: 3px; }
 
-        /* 🖨️ 인쇄 전용(A4) 2단 설정 */
-        #print-view { display: none; width: 1100px; background: white; padding: 20px; box-sizing: border-box; }
-        .print-header-area { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
-        .print-title { font-size: 28px; font-weight: bold; letter-spacing: -1px; }
-        .print-summary-tbl { border-collapse: collapse; text-align: center; border: 2px solid #000; font-size: 12px; font-weight: bold; }
-        .print-summary-tbl th, .print-summary-tbl td { border: 1px solid #000; padding: 4px 10px; }
-        .print-summary-tbl th { background-color: #f0f0f0; }
-        .print-grid { display: flex; gap: 15px; width: 100%; }
-        .print-table { width: 50%; border-collapse: collapse; text-align: center; font-size: 11px; border: 2px solid #000; table-layout: fixed; }
-        .print-table th, .print-table td { border: 1px solid #000; padding: 3px 1px; }
-        .print-table thead th { background-color: #e8f5e9; font-weight: bold; }
-        .print-village-title { background-color: #c8e6c9 !important; font-weight: bold; letter-spacing: 1px; font-size: 12px; }
-        .col-name { width: 22%; }
-        .col-chk { width: 7%; color: #0044cc; font-weight: bold; font-size: 12px; }
+        /* 💡 이미지 저장 시 2단으로 배열하기 위한 특수 설정 */
+        .export-mode { width: 850px !important; padding: 20px !important; }
+        .export-mode .table-wrapper { flex-direction: row !important; align-items: flex-start !important; }
+        .export-mode .split-table { width: 50% !important; }
 
-        /* 💡 새 인원 추가 모달 스타일 */
+        /* 모달 스타일 */
         #add-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; box-sizing: border-box; }
-        .modal-content h3 { margin-top: 0; color: #1976D2; border-bottom: 2px solid #1976D2; padding-bottom: 10px; }
-        .modal-content label { display: block; margin: 15px 0 5px; font-weight: bold; font-size: 14px; }
-        .modal-content select, .modal-content input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
-        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
-        .modal-btns button { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .btn-save { background: #1976D2; color: white; }
-        .btn-cancel { background: #999; color: white; }
+        .modal-content select, .modal-content input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        .modal-btns { display: flex; gap: 10px; } .modal-btns button { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -77,23 +55,29 @@
     <button class="admin-btn btn-pdf" id="pdfBtn">📄 PDF 저장</button>
 </div>
 
-<div id="mobile-view">
+<div class="container" id="capture-area">
     <div class="header">
         <div class="header-title" id="mainTitle">2026년 여호수아 목장 출석부 (관리자)</div>
-        <div class="week-label" id="weekRange">주간 데이터 불러오는 중...</div>
+        <div class="week-label" id="weekRange">데이터 로딩 중...</div>
         <div><input type="date" class="date-input" id="currentDate"></div>
     </div>
+
     <div class="summary-box">
         <div>수요:<span id="tot-wed">0</span></div><div>금요:<span id="tot-fri">0</span></div>
         <div>주일:<span id="tot-sun">0</span></div><div>마을:<span id="tot-vil">0</span></div>
     </div>
-    <table class="mobile-table">
-        <thead>
-            <tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th>관리</th></tr>
-        </thead>
-        <tbody id="mobileBody"></tbody>
-    </table>
-    <button class="admin-btn btn-add" id="addBtn">+ 새 인원 추가</button>
+
+    <div class="table-wrapper">
+        <table class="split-table">
+            <thead><tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th class="hide-on-print">관리</th></tr></thead>
+            <tbody id="tbody-left"></tbody>
+        </table>
+        <table class="split-table">
+            <thead><tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th class="hide-on-print">관리</th></tr></thead>
+            <tbody id="tbody-right"></tbody>
+        </table>
+    </div>
+    <button class="admin-btn btn-add hide-on-print" id="addBtn">+ 새 인원 추가</button>
 </div>
 
 <div id="add-modal">
@@ -101,48 +85,14 @@
         <h3>새 인원 등록</h3>
         <label>마을 선택</label>
         <select id="modal-village">
-            <option value="열매">열매</option>
-            <option value="믿음">믿음</option>
-            <option value="소망">소망</option>
-            <option value="축복">축복</option>
-            <option value="온유">온유</option>
-            <option value="만배">만배</option>
-            <option value="생명수">생명수</option>
-            <option value="갈렙">갈렙</option>
-            <option value="약속">약속</option>
+            <option value="열매">열매</option><option value="믿음">믿음</option><option value="소망">소망</option><option value="축복">축복</option><option value="온유">온유</option><option value="만배">만배</option><option value="생명수">생명수</option><option value="갈렙">갈렙</option><option value="약속">약속</option>
         </select>
-        <label>직분 (목자/순장/공란)</label>
-        <input type="text" id="modal-role" placeholder="예: 목자">
-        <label>이름</label>
+        <input type="text" id="modal-role" placeholder="직분 (예: 목자)">
         <input type="text" id="modal-name" placeholder="성함 입력">
         <div class="modal-btns">
-            <button class="btn-cancel" id="modal-cancel">취소</button>
-            <button class="btn-save" id="modal-save">저장하기</button>
+            <button style="background:#999; color:white;" id="modal-cancel">취소</button>
+            <button style="background:#1976D2; color:white;" id="modal-save">저장</button>
         </div>
-    </div>
-</div>
-
-<div id="print-view">
-    <div class="print-header-area">
-        <div class="print-title">여호수아 목장 <span class="print-date" id="printDateTxt"></span></div>
-        <table class="print-summary-tbl">
-            <tr><th>주일</th><th>마을</th><th rowspan="2" style="padding: 0 15px;">계</th></tr>
-            <tr><td id="print-tot-sun">0</td><td id="print-tot-vil">0</td></tr>
-        </table>
-    </div>
-    <div class="print-grid">
-        <table class="print-table">
-            <thead>
-                <tr><th class="col-name">성 명</th><th class="col-chk">수<br>요</th><th class="col-chk">금<br>요</th><th class="col-chk">주<br>일</th><th class="col-chk">마<br>을</th><th class="col-name">성 명</th><th class="col-chk">수<br>요</th><th class="col-chk">금<br>요</th><th class="col-chk">주<br>일</th><th class="col-chk">마<br>을</th></tr>
-            </thead>
-            <tbody id="printLeftBody"></tbody>
-        </table>
-        <table class="print-table">
-            <thead>
-                <tr><th class="col-name">성 명</th><th class="col-chk">수<br>요</th><th class="col-chk">금<br>요</th><th class="col-chk">주<br>일</th><th class="col-chk">마<br>을</th><th class="col-name">성 명</th><th class="col-chk">수<br>요</th><th class="col-chk">금<br>요</th><th class="col-chk">주<br>일</th><th class="col-chk">마<br>을</th></tr>
-            </thead>
-            <tbody id="printRightBody"></tbody>
-        </table>
     </div>
 </div>
 
@@ -178,25 +128,9 @@
     const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
     const leftVillages = ['열매', '믿음', '소망', '축복'];
 
-    let audioCtx;
-    function playSound(isCheck) {
-        try {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.setValueAtTime(isCheck ? 880 : 440, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-        } catch(e) {}
-    }
-
     async function init() {
         onValue(ref(db, 'members'), (snap) => {
-            let loaded = snap.val() || [];
-            members = loaded.filter(m => m !== null).sort((a, b) => {
-                return villageOrder.indexOf(a.village) - villageOrder.indexOf(b.village);
-            });
+            members = (snap.val() || []).filter(m => m !== null).sort((a, b) => villageOrder.indexOf(a.village) - villageOrder.indexOf(b.village));
             renderTable();
         });
         loadData();
@@ -204,110 +138,86 @@
 
     function loadData() {
         const weekKey = getWeekKey(dateInput.value);
-        const startDay = new Date(weekKey); const endDay = new Date(startDay);
-        endDay.setDate(endDay.getDate() + 4);
-        document.getElementById('weekRange').innerText = `${startDay.getMonth()+1}/${startDay.getDate()}(수) ~ ${endDay.getMonth()+1}/${endDay.getDate()}(일) 데이터`;
-        onValue(ref(db, `attendance/${weekKey}`), (snap) => {
-            attendanceData = snap.val() || {};
-            renderTable();
-        });
+        onValue(ref(db, `attendance/${weekKey}`), (snap) => { attendanceData = snap.val() || {}; renderTable(); });
+        document.getElementById('weekRange').innerText = `${weekKey} (수) 시작 주간`;
     }
 
     function renderTable() {
-        const tbodyMobile = document.getElementById('mobileBody');
-        tbodyMobile.innerHTML = '';
+        const tLeft = document.getElementById('tbody-left'); const tRight = document.getElementById('tbody-right');
+        tLeft.innerHTML = ''; tRight.innerHTML = '';
         let c = { wed: 0, fri: 0, sun: 0, vil: 0 };
+
         members.forEach((m, idx) => {
-            const checks = attendanceData[idx] || {};
-            if(checks.wed) c.wed++; if(checks.fri) c.fri++; if(checks.sun) c.sun++; if(checks.vil) c.vil++;
+            const ch = attendanceData[idx] || {};
+            if(ch.wed) c.wed++; if(ch.fri) c.fri++; if(ch.sun) c.sun++; if(ch.vil) c.vil++;
             const tr = document.createElement('tr');
             if(idx === members.length - 1 || members[idx+1].village !== m.village) tr.classList.add('village-divider');
             let dName = m.name.includes('(') ? m.name.replace('(', '<br>(') : m.name;
-            tr.innerHTML = `
-                <td>${m.village}</td><td>${m.role}</td><td>${dName}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
-                <td><button class="admin-btn btn-del" onclick="deleteMember(${idx})">삭제</button></td>
-            `;
-            tbodyMobile.appendChild(tr);
+            tr.innerHTML = `<td>${m.village}</td><td>${m.role}</td><td>${dName}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${ch.wed?'O':''}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${ch.fri?'O':''}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${ch.sun?'O':''}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${ch.vil?'O':''}</td><td class="hide-on-print"><button class="btn-del" onclick="deleteMember(${idx})">삭제</button></td>`;
+            (leftVillages.includes(m.village) ? tLeft : tRight).appendChild(tr);
         });
-        document.getElementById('tot-wed').innerText = c.wed; document.getElementById('tot-fri').innerText = c.fri;
-        document.getElementById('tot-sun').innerText = c.sun; document.getElementById('tot-vil').innerText = c.vil;
-        document.getElementById('print-tot-sun').innerText = c.sun; document.getElementById('print-tot-vil').innerText = c.vil;
-        buildPrintGrid();
-        const dObj = new Date(dateInput.value);
-        document.getElementById('printDateTxt').innerText = `(${dObj.getFullYear()}년 ${dObj.getMonth()+1}월 ${dObj.getDate()}일)`;
-    }
-
-    function buildPrintGrid() {
-        const tLeft = document.getElementById('printLeftBody'); const tRight = document.getElementById('printRightBody');
-        tLeft.innerHTML = ''; tRight.innerHTML = '';
-        const allVils = [...new Set(members.map(m => m.village))];
-        const half = Math.ceil(allVils.length / 2);
-        const draw = (vils, target) => {
-            vils.forEach(vName => {
-                const vMems = members.filter(m => m.village === vName);
-                const trH = document.createElement('tr');
-                trH.innerHTML = `<td colspan="10" class="print-village-title">${vName}</td>`;
-                target.appendChild(trH);
-                const mid = Math.ceil(vMems.length / 2);
-                for(let i=0; i<mid; i++) {
-                    const tr = document.createElement('tr');
-                    const m1 = vMems[i], m2 = vMems[i+mid];
-                    const makeCell = (m) => {
-                        if(!m) return `<td></td><td></td><td></td><td></td><td></td>`;
-                        const idx = members.indexOf(m); const ch = attendanceData[idx] || {};
-                        return `<td>${m.role?m.role+' ':''}${m.name}</td><td>${ch.wed?'O':''}</td><td>${ch.fri?'O':''}</td><td>${ch.sun?'O':''}</td><td>${ch.vil?'O':''}</td>`;
-                    };
-                    tr.innerHTML = makeCell(m1) + makeCell(m2);
-                    target.appendChild(tr);
-                }
-            });
-        };
-        draw(allVils.slice(0, half), tLeft); draw(allVils.slice(half), tRight);
+        document.getElementById('tot-wed').innerText = c.wed; document.getElementById('tot-fri').innerText = c.fri; document.getElementById('tot-sun').innerText = c.sun; document.getElementById('tot-vil').innerText = c.vil;
     }
 
     window.toggleCheck = (idx, day) => {
         const weekKey = getWeekKey(dateInput.value);
-        const next = !(attendanceData[idx]?.[day] || false);
-        set(ref(db, `attendance/${weekKey}/${idx}/${day}`), next);
-        playSound(next);
+        set(ref(db, `attendance/${weekKey}/${idx}/${day}`), !(attendanceData[idx]?.[day] || false));
     };
 
-    window.deleteMember = (idx) => { if(confirm("삭제하시겠습니까?")) { members.splice(idx, 1); set(ref(db, 'members'), members); } };
+    // 📸 이미지 저장 로직 개선
+    document.getElementById('imgBtn').addEventListener('click', () => {
+        const area = document.getElementById('capture-area');
+        area.classList.add('export-mode');
+        document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = 'none');
 
-    // 모달 제어 로직
-    const modal = document.getElementById('add-modal');
-    document.getElementById('addBtn').onclick = () => { modal.style.display = 'flex'; };
-    document.getElementById('modal-cancel').onclick = () => { modal.style.display = 'none'; };
-    document.getElementById('modal-save').onclick = () => {
-        const v = document.getElementById('modal-village').value;
-        const r = document.getElementById('modal-role').value;
-        const n = document.getElementById('modal-name').value;
-        if(n) {
-            members.push({ village: v, role: r, name: n });
-            set(ref(db, 'members'), members);
-            modal.style.display = 'none';
-            document.getElementById('modal-role').value = '';
-            document.getElementById('modal-name').value = '';
-        } else { alert("이름을 입력해주세요."); }
-    };
-
-    document.getElementById('pdfBtn').addEventListener('click', () => {
-        document.getElementById('mobile-view').style.display = 'none';
-        document.getElementById('print-view').style.display = 'block';
+        // 💡 0.5초 대기 후 캡처 (명단이 많으므로 안정화 시간 부여)
         setTimeout(() => {
-            html2canvas(document.getElementById('print-view'), {scale: 2}).then(canvas => {
+            html2canvas(area, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff",
+                logging: false
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `여호수아_출석부_${getWeekKey(dateInput.value)}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                
+                // 원상복구
+                area.classList.remove('export-mode');
+                document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = '');
+            }).catch(err => {
+                alert("이미지 저장 중 오류가 발생했습니다. 크롬 브라우저 사용을 권장합니다.");
+                console.error(err);
+            });
+        }, 500);
+    });
+
+    // PDF 저장 (기존과 동일)
+    document.getElementById('pdfBtn').addEventListener('click', () => {
+        const area = document.getElementById('capture-area');
+        area.classList.add('export-mode');
+        document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = 'none');
+        setTimeout(() => {
+            html2canvas(area, {scale: 2}).then(canvas => {
                 const pdf = new window.jspdf.jsPDF('l', 'mm', 'a4');
                 pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 10, 297, canvas.height * 297 / canvas.width);
-                pdf.save(`여호수아_출석부_${dateInput.value}.pdf`);
-                document.getElementById('print-view').style.display = 'none';
-                document.getElementById('mobile-view').style.display = 'block';
+                pdf.save(`여호수아_출석부_${getWeekKey(dateInput.value)}.pdf`);
+                area.classList.remove('export-mode');
+                document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = '');
             });
-        }, 200);
+        }, 500);
     });
+
+    // 모달 로직
+    const modal = document.getElementById('add-modal');
+    document.getElementById('addBtn').onclick = () => modal.style.display = 'flex';
+    document.getElementById('modal-cancel').onclick = () => modal.style.display = 'none';
+    document.getElementById('modal-save').onclick = () => {
+        const v = document.getElementById('modal-village').value, r = document.getElementById('modal-role').value, n = document.getElementById('modal-name').value;
+        if(n) { members.push({ village:v, role:r, name:n }); set(ref(db, 'members'), members); modal.style.display = 'none'; }
+    };
+
     init();
 </script>
 </body>
