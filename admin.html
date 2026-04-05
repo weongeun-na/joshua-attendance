@@ -27,14 +27,14 @@
 
         .table-wrapper { display: flex; flex-direction: column; gap: 15px; }
         .split-table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
-        th, td { border: 1px solid #333; padding: 8px 1px; font-size: 12px; }
+        th, td { border: 1px solid #333; padding: 6px 1px; font-size: 12px; } /* 상하 패딩 살짝 축소 */
         th { background-color: #fff8e1; word-break: keep-all; }
         
-        /* 💡 레이아웃 최적화: 이름 칸 너비 확보 */
+        /* 💡 레이아웃 복구: 2줄 출력을 위해 이름 칸 너비 원복 */
         .mobile-table th:nth-child(1), .mobile-table th:nth-child(2) { width: 12%; } 
-        .mobile-table th:nth-child(3) { width: 22%; } /* 👈 이름 칸 너비를 22%로 넓힘 */
+        .mobile-table th:nth-child(3) { width: 20%; } /* 👈 원래 너비(20%)로 복구 */
         .mobile-table th:nth-child(4), .mobile-table th:nth-child(5), .mobile-table th:nth-child(6), .mobile-table th:nth-child(7) { width: 10%; } 
-        .mobile-table th:nth-child(8) { width: 14%; } 
+        .mobile-table th:nth-child(8) { width: 16%; } /* 나머지 너비 조정 */
         
         .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
         .village-divider { border-bottom: 2px solid #000; }
@@ -43,150 +43,4 @@
         .btn-add { background-color: #1976D2; width: 100%; margin-top: 10px; padding: 12px; font-size: 16px; }
         .btn-del { background-color: #ff9800; padding: 4px 6px; font-size: 11px; cursor: pointer; color: white; border: none; border-radius: 3px; }
 
-        .export-mode { width: 850px !important; padding: 20px !important; }
-        .export-mode .table-wrapper { flex-direction: row !important; align-items: flex-start !important; }
-        .export-mode .split-table { width: 50% !important; }
-
-        #add-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; box-sizing: border-box; }
-        .modal-content select, .modal-content input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-        .modal-btns { display: flex; gap: 10px; } .modal-btns button { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-    </style>
-</head>
-<body>
-
-<div style="text-align: center; margin-bottom: 10px;">
-    <button class="admin-btn btn-img" id="imgBtn">🖼️ 이미지 저장</button>
-    <button class="admin-btn btn-pdf" id="pdfBtn">📄 PDF 저장</button>
-</div>
-
-<div class="container" id="capture-area">
-    <div class="header">
-        <div class="header-title" id="mainTitle">2026년 여호수아 목장 출석부 (관리자)</div>
-        <div class="week-label" id="weekRange">데이터 로딩 중...</div>
-        <div><input type="date" class="date-input" id="currentDate"></div>
-    </div>
-
-    <div class="summary-box">
-        <div>수요:<span id="tot-wed">0</span></div><div>금요:<span id="tot-fri">0</span></div>
-        <div>주일:<span id="tot-sun">0</span></div><div>마을:<span id="tot-vil">0</span></div>
-    </div>
-
-    <div class="table-wrapper">
-        <table class="split-table mobile-table"> <thead><tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th class="hide-on-print">관리</th></tr></thead>
-            <tbody id="tbody-left"></tbody>
-        </table>
-        <table class="split-table mobile-table"> <thead><tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th><th class="hide-on-print">관리</th></tr></thead>
-            <tbody id="tbody-right"></tbody>
-        </table>
-    </div>
-    <button class="admin-btn btn-add hide-on-print" id="addBtn">+ 새 인원 추가</button>
-</div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyAaKWXfo-m5gSkZWt9Y5msG_mdCOqurgDA",
-        authDomain: "joshua-attendance-39be2.firebaseapp.com",
-        projectId: "joshua-attendance-39be2",
-        storageBucket: "joshua-attendance-39be2.firebasestorage.app",
-        messagingSenderId: "300709168343",
-        appId: "1:300709168343:4d662811b2282adb75c92",
-        databaseURL: "https://joshua-attendance-39be2-default-rtdb.firebaseio.com"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    let members = []; let attendanceData = {};
-    const dateInput = document.getElementById('currentDate');
-
-    function getWeekKey(date) {
-        const d = new Date(date); const day = d.getDay();
-        const diff = (day >= 3) ? (day - 3) : (day + 4);
-        d.setDate(d.getDate() - diff);
-        return d.toISOString().split('T')[0];
-    }
-
-    dateInput.valueAsDate = new Date();
-    dateInput.addEventListener('change', loadData);
-
-    const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
-    const leftVillages = ['열매', '믿음', '소망', '축복'];
-
-    async function init() {
-        onValue(ref(db, 'members'), (snap) => {
-            members = (snap.val() || []).filter(m => m !== null).sort((a, b) => villageOrder.indexOf(a.village) - villageOrder.indexOf(b.village));
-            renderTable();
-        });
-        loadData();
-    }
-
-    function loadData() {
-        const weekKey = getWeekKey(dateInput.value);
-        onValue(ref(db, `attendance/${weekKey}`), (snap) => { attendanceData = snap.val() || {}; renderTable(); });
-        document.getElementById('weekRange').innerText = `${weekKey} (수) 시작 주간`;
-    }
-
-    function renderTable() {
-        const tLeft = document.getElementById('tbody-left'); const tRight = document.getElementById('tbody-right');
-        tLeft.innerHTML = ''; tRight.innerHTML = '';
-        let c = { wed: 0, fri: 0, sun: 0, vil: 0 };
-
-        members.forEach((m, idx) => {
-            const ch = attendanceData[idx] || {};
-            if(ch.wed) c.wed++; if(ch.fri) c.fri++; if(ch.sun) c.sun++; if(ch.vil) c.vil++;
-            const tr = document.createElement('tr');
-            if(idx === members.length - 1 || members[idx+1].village !== m.village) tr.classList.add('village-divider');
-            
-            // 💡 괄호 앞 줄바꿈 삭제 (한 줄로 나오게)
-            let dName = m.name; 
-            
-            tr.innerHTML = `<td>${m.village}</td><td>${m.role}</td><td>${dName}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${ch.wed?'O':''}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${ch.fri?'O':''}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${ch.sun?'O':''}</td><td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${ch.vil?'O':''}</td><td class="hide-on-print"><button class="btn-del" onclick="deleteMember(${idx})">삭제</button></td>`;
-            (leftVillages.includes(m.village) ? tLeft : tRight).appendChild(tr);
-        });
-        document.getElementById('tot-wed').innerText = c.wed; document.getElementById('tot-fri').innerText = c.fri; document.getElementById('tot-sun').innerText = c.sun; document.getElementById('tot-vil').innerText = c.vil;
-    }
-
-    window.toggleCheck = (idx, day) => {
-        const weekKey = getWeekKey(dateInput.value);
-        set(ref(db, `attendance/${weekKey}/${idx}/${day}`), !(attendanceData[idx]?.[day] || false));
-    };
-
-    // 이미지 저장 로직 (동일)
-    document.getElementById('imgBtn').addEventListener('click', () => {
-        const area = document.getElementById('capture-area');
-        area.classList.add('export-mode');
-        document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = 'none');
-        setTimeout(() => {
-            html2canvas(area, {scale: 2}).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `여호수아_출석부_${getWeekKey(dateInput.value)}.png`;
-                link.href = canvas.toDataURL("image/png"); link.click();
-                area.classList.remove('export-mode');
-                document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = '');
-            });
-        }, 500);
-    });
-
-    // PDF 저장 (동일)
-    document.getElementById('pdfBtn').addEventListener('click', () => {
-        const area = document.getElementById('capture-area');
-        area.classList.add('export-mode');
-        document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = 'none');
-        setTimeout(() => {
-            html2canvas(area, {scale: 2}).then(canvas => {
-                const pdf = new window.jspdf.jsPDF('l', 'mm', 'a4');
-                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 10, 297, canvas.height * 297 / canvas.width);
-                pdf.save(`여호수아_출석부_${getWeekKey(dateInput.value)}.pdf`);
-                area.classList.remove('export-mode');
-                document.querySelectorAll('.hide-on-print').forEach(el => el.style.display = '');
-            });
-        }, 500);
-    });
-
-    init();
-</script>
-</body>
-</html>
+        .
