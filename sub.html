@@ -2,68 +2,61 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
     <title>2026년 여호수아 목장 출석부 (목자용)</title>
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛪️</text></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛪️</text></svg>">
     
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; margin: 10px; background-color: #f4f4f9; }
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 10px; background-color: #f4f4f9; -webkit-tap-highlight-color: transparent; }
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px solid #333; padding: 15px 5px; margin-bottom: 10px; text-align: center; }
-        .header-title { font-size: 18px; font-weight: bold; }
-        .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; font-family: inherit; text-align: center; }
+        .header { display: flex; flex-direction: column; align-items: center; border: 2px solid #333; padding: 15px 5px; margin-bottom: 10px; text-align: center; }
+        .header-title { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+        .date-input { font-size: 18px; border: none; outline: none; color: #0044cc; font-weight: bold; text-align: center; background: transparent; }
+        .week-label { font-size: 12px; color: #666; font-weight: bold; margin-top: 5px; }
         
-        /* 💡 한 줄로 쏙 들어가는 총 합계 요약 디자인 */
         .summary-box { display: flex; justify-content: space-evenly; align-items: center; margin-bottom: 15px; font-weight: bold; color: #d32f2f; font-size: 13px; background: #fff8e1; padding: 10px 2px; border: 1px solid #333; letter-spacing: -0.5px; }
-        .summary-box div { white-space: nowrap; }
         .summary-box span { color: #0044cc; margin: 0 2px; font-size: 14px; }
 
-        table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
-        th, td { border: 1px solid #333; padding: 8px 2px; font-size: 12px; }
-        th { background-color: #fff8e1; word-break: keep-all; }
+        .mobile-table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
+        .mobile-table th, .mobile-table td { border: 1px solid #333; padding: 6px 1px; font-size: 12px; line-height: 1.3; }
+        .mobile-table th { background-color: #fff8e1; word-break: keep-all; }
         
-        th:nth-child(1) { width: 14%; } 
-        th:nth-child(2) { width: 14%; } 
-        th:nth-child(3) { width: 28%; } 
-        th:nth-child(4), th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 11%; } 
+        /* 💡 2줄 출력을 위한 너비 최적화 */
+        .mobile-table th:nth-child(1) { width: 14%; } 
+        .mobile-table th:nth-child(2) { width: 12%; } 
+        .mobile-table th:nth-child(3) { width: 22%; } 
+        .mobile-table th:nth-child(4), .mobile-table th:nth-child(5), .mobile-table th:nth-child(6) { width: 13%; } 
+        .mobile-table th:nth-child(7) { width: 13%; } 
         
-        .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; }
-        .check-cell:hover { background-color: #e3f2fd; }
+        .check-cell { cursor: pointer; color: #0044cc; font-weight: bold; font-size: 16px; user-select: none; background-color: #fafafa; }
+        .check-cell:active { background-color: #e3f2fd; }
         .village-divider { border-bottom: 2px solid #000; }
-        .notice { text-align: center; font-size: 12px; color: #666; margin-bottom: 10px; word-break: keep-all; }
+        .notice { text-align: center; font-size: 11px; color: #666; margin-bottom: 5px; word-break: keep-all; }
     </style>
 </head>
-<body>
-
-<div class="container">
-    <div class="notice">터치하면 출석이 체크되며, 모든 목자와 실시간 공유됩니다.</div>
+<body onclick="unlockAudio()"> <div class="container">
+    <div class="notice">터치하면 실시간 공유됩니다. (수~일 주간 데이터)</div>
     <div class="header">
         <div class="header-title">2026년 여호수아 목장 출석부 (목자용)</div>
         <div><input type="date" class="date-input" id="currentDate"></div>
+        <div class="week-label" id="weekRange">데이터 로딩 중...</div>
     </div>
 
     <div class="summary-box">
-        <div>수요:<span id="tot-wed">0</span>명</div>
-        <div>금요:<span id="tot-fri">0</span>명</div>
-        <div>주일:<span id="tot-sun">0</span>명</div>
-        <div>마을:<span id="tot-vil">0</span>명</div>
+        <div>수요:<span id="tot-wed">0</span></div><div>금요:<span id="tot-fri">0</span></div>
+        <div>주일:<span id="tot-sun">0</span></div><div>마을:<span id="tot-vil">0</span></div>
     </div>
 
-    <table>
+    <table class="mobile-table">
         <thead>
-            <tr>
-                <th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th>
-            </tr>
+            <tr><th>마을</th><th>직분</th><th>이름</th><th>수요</th><th>금요</th><th>주일</th><th>마을</th></tr>
         </thead>
-        <tbody id="tableBody">
-            </tbody>
+        <tbody id="tableBody"></tbody>
     </table>
 </div>
 
@@ -83,45 +76,65 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-
-    let members = [];
-    let attendanceData = {};
+    let members = []; let attendanceData = {};
     const dateInput = document.getElementById('currentDate');
-    
-    dateInput.valueAsDate = new Date();
+
+    // 💡 웹앱 소리 차단 해제
+    let audioCtx = null;
+    window.unlockAudio = function() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    };
+
+    function playSound(isCheck) {
+        try {
+            unlockAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(isCheck ? 880 : 440, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        } catch(e) { console.log(e); }
+    }
+
+    // 💡 안전한 오늘 날짜 세팅
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    dateInput.value = `${yyyy}-${mm}-${dd}`;
+
+    // 💡 관리자용과 완벽하게 동일한 날짜 계산 엔진 적용 (오차 0%)
+    function getWeekKey(dateStr) {
+        if (!dateStr) return "";
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return "";
+        
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        const day = d.getDay();
+        const diff = (day >= 3) ? (day - 3) : (day + 4);
+        d.setDate(d.getDate() - diff);
+        
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const dt = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${dt}`;
+    }
+
     dateInput.addEventListener('change', loadData);
 
     const villageOrder = ['열매', '믿음', '소망', '축복', '온유', '만배', '생명수', '갈렙', '약속'];
 
-    let audioCtx;
-    function playSound(isCheck) {
-        try {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(isCheck ? 880 : 440, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            osc.start(audioCtx.currentTime);
-            osc.stop(audioCtx.currentTime + 0.1);
-            setTimeout(() => { osc.disconnect(); gain.disconnect(); }, 200);
-        } catch(e) {}
-    }
-
     function init() {
         onValue(ref(db, 'members'), (snap) => {
-            let loadedMembers = snap.val() || [];
-            loadedMembers = loadedMembers.filter(m => m !== null && m !== undefined);
-            members = loadedMembers.sort((a, b) => {
-                let aIndex = villageOrder.indexOf(a.village);
-                let bIndex = villageOrder.indexOf(b.village);
-                if (aIndex === -1) aIndex = 99;
-                if (bIndex === -1) bIndex = 99;
-                return aIndex - bIndex;
+            const data = snap.val() || [];
+            members = data.filter(m => m && typeof m === 'object').sort((a, b) => {
+                const aVil = a.village || "";
+                const bVil = b.village || "";
+                return villageOrder.indexOf(aVil) - villageOrder.indexOf(bVil);
             });
             renderTable();
         });
@@ -129,57 +142,58 @@
     }
 
     function loadData() {
-        const dateStr = dateInput.value;
-        onValue(ref(db, `attendance/${dateStr}`), (snap) => {
-            attendanceData = snap.val() || {};
-            renderTable();
+        const weekKey = getWeekKey(dateInput.value);
+        if (!weekKey) return;
+        
+        document.getElementById('weekRange').innerText = `${weekKey} (수) 시작 주간 데이터`;
+        onValue(ref(db, `attendance/${weekKey}`), (snap) => { 
+            attendanceData = snap.val() || {}; 
+            renderTable(); 
         });
     }
 
     function renderTable() {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
-        let wedCount = 0, friCount = 0, sunCount = 0, vilCount = 0;
+        let c = { wed: 0, fri: 0, sun: 0, vil: 0 };
 
         members.forEach((m, idx) => {
             if(!m) return;
-            const checks = attendanceData[idx] || {};
-            if(checks.wed) wedCount++;
-            if(checks.fri) friCount++;
-            if(checks.sun) sunCount++;
-            if(checks.vil) vilCount++;
-
-            const tr = document.createElement('tr');
-            const isLastInVillage = (idx === members.length - 1) || (members[idx+1].village !== m.village);
-            if(isLastInVillage) tr.classList.add('village-divider');
+            const ch = attendanceData[idx] || {};
+            if(ch.wed) c.wed++; if(ch.fri) c.fri++; if(ch.sun) c.sun++; if(ch.vil) c.vil++;
             
-            let displayName = m.name;
-            if (displayName.includes('(') && !displayName.includes('<br>')) {
-                displayName = displayName.replace('(', '<br>(');
+            const tr = document.createElement('tr');
+            const nextMember = members[idx+1];
+            if(idx === members.length - 1 || (nextMember && nextMember.village !== m.village)) {
+                tr.classList.add('village-divider');
             }
             
+            // 💡 이름 2줄 표기 로직
+            const safeName = m.name || "";
+            const safeVil = m.village || "-";
+            const safeRole = m.role || "";
+            const dName = safeName.includes('(') ? safeName.replace('(', '<br>(') : safeName;
+            
             tr.innerHTML = `
-                <td>${m.village}</td><td>${m.role}</td><td>${displayName}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${checks.wed ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${checks.fri ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${checks.sun ? 'O' : ''}</td>
-                <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${checks.vil ? 'O' : ''}</td>
+                <td>${safeVil}</td><td>${safeRole}</td><td>${dName}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'wed')">${ch.wed?'O':''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'fri')">${ch.fri?'O':''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'sun')">${ch.sun?'O':''}</td>
+                <td class="check-cell" onclick="toggleCheck(${idx}, 'vil')">${ch.vil?'O':''}</td>
             `;
             tbody.appendChild(tr);
         });
         
-        document.getElementById('tot-wed').innerText = wedCount;
-        document.getElementById('tot-fri').innerText = friCount;
-        document.getElementById('tot-sun').innerText = sunCount;
-        document.getElementById('tot-vil').innerText = vilCount;
+        document.getElementById('tot-wed').innerText = c.wed;
+        document.getElementById('tot-fri').innerText = c.fri;
+        document.getElementById('tot-sun').innerText = c.sun;
+        document.getElementById('tot-vil').innerText = c.vil;
     }
 
     window.toggleCheck = (idx, day) => {
-        const dateStr = dateInput.value;
-        const current = attendanceData[idx]?.[day] || false;
-        const nextState = !current;
-        set(ref(db, `attendance/${dateStr}/${idx}/${day}`), nextState);
-        playSound(nextState);
+        const weekKey = getWeekKey(dateInput.value);
+        set(ref(db, `attendance/${weekKey}/${idx}/${day}`), !(attendanceData[idx]?.[day] || false));
+        playSound(!(attendanceData[idx]?.[day] || false));
     };
 
     init();
